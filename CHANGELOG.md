@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-01-16
+
+### Added
+- Fallback to default IDP if no IDP is found in the database
+
 ## [0.1.1] - 2026-01-16
 
 ### Changed

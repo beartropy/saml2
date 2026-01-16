@@ -74,12 +74,42 @@ Auth::login($user);
 
 > **Note**: En Laravel 11/12, los eventos se descubren automáticamente.
 
-### 4. Add Login Link
+### 4. Integrate with Your Routes
 
+**Simple** - un link de login:
 ```html
 <a href="{{ route('saml2.login', ['idp' => 'azure']) }}">
     Login with Azure AD
 </a>
+```
+
+**Integración completa** - reemplazando rutas de auth:
+```php
+// routes/auth.php
+
+Route::middleware('guest')->group(function () {
+    if (app()->environment('local')) {
+        // Login local para desarrollo
+        Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AuthController::class, 'authenticate']);
+    } else {
+        // SAML Login - redirige al IDP
+        Route::get('/login', function () {
+            return redirect()->route('saml2.login', ['idp' => 'tu-idp-key']);
+        })->name('login');
+    }
+});
+
+Route::middleware('auth')->group(function () {
+    if (app()->environment('local')) {
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    } else {
+        // SAML Logout (SLO)
+        Route::match(['get', 'post'], '/logout', function () {
+            return redirect()->route('saml2.logout');
+        })->name('logout');
+    }
+});
 ```
 
 ## Artisan Commands
@@ -100,7 +130,7 @@ The package registers these routes:
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/saml2/login/{idp}` | GET | Initiate SSO login |
+| `/saml2/login/{idp?}` | GET | Initiate SSO login (idp optional, defaults to first active) |
 | `/saml2/acs/{idp}` | POST | Assertion Consumer Service |
 | `/saml2/sls/{idp}` | GET/POST | Single Logout Service |
 | `/saml2/metadata` | GET | SP Metadata XML |

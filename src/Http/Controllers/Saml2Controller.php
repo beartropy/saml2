@@ -3,6 +3,7 @@
 namespace Beartropy\Saml2\Http\Controllers;
 
 use Beartropy\Saml2\Exceptions\InvalidIdpException;
+use Beartropy\Saml2\Models\Saml2Idp;
 use Beartropy\Saml2\Services\Saml2Service;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,11 +19,20 @@ class Saml2Controller extends Controller
     /**
      * Initiate SSO login for an IDP.
      * 
-     * GET /saml2/login/{idp}
+     * GET /saml2/login/{idp?}
      */
-    public function login(Request $request, string $idp)
+    public function login(Request $request, ?string $idp = null)
     {
         try {
+            // If no IDP specified, use first active IDP
+            if (!$idp) {
+                $firstIdp = Saml2Idp::active()->first();
+                if (!$firstIdp) {
+                    throw new InvalidIdpException('No active IDP configured');
+                }
+                $idp = $firstIdp->key;
+            }
+
             $returnTo = $request->query('returnTo', config('beartropy-saml2.login_redirect', '/'));
             $redirectUrl = $this->saml2Service->login($idp, $returnTo);
             

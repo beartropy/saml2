@@ -7,8 +7,8 @@ Route::group([
     'prefix' => config('beartropy-saml2.route_prefix', 'saml2'),
     'middleware' => config('beartropy-saml2.route_middleware', ['web']),
 ], function () {
-    // SSO Login - redirect to IDP
-    Route::get('login/{idp}', [Saml2Controller::class, 'login'])
+    // SSO Login - redirect to IDP (if no idp specified, uses first active)
+    Route::get('login/{idp?}', [Saml2Controller::class, 'login'])
         ->name('saml2.login');
     
     // ACS - Assertion Consumer Service (receives SAML response)
