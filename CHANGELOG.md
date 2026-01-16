@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-01-16
+
+### Changed
+- ACS route now generic, getting idp from DB.
+
 ## [0.1.2] - 2026-01-16
 
 ### Added

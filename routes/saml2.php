@@ -11,7 +11,12 @@ Route::group([
     Route::get('login/{idp?}', [Saml2Controller::class, 'login'])
         ->name('saml2.login');
     
-    // ACS - Assertion Consumer Service (receives SAML response)
+    // ACS - Generic (auto-detects IDP from SAML response Issuer)
+    Route::post('acs', [Saml2Controller::class, 'acsAuto'])
+        ->name('saml2.acs.auto')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+    
+    // ACS - Specific IDP (legacy, for backwards compatibility)
     Route::post('acs/{idp}', [Saml2Controller::class, 'acs'])
         ->name('saml2.acs')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);

@@ -68,7 +68,7 @@ class Saml2Controller extends Controller
             
             // Store session info for potential SLO
             session([
-                'saml2_idp' => $idp,
+                'saml2_idp' => $result['idpKey'] ?? $idp,
                 'saml2_session_index' => $result['sessionIndex'],
                 'saml2_name_id' => $result['nameId'],
             ]);
@@ -80,6 +80,38 @@ class Saml2Controller extends Controller
         } catch (\Throwable $e) {
             Log::error('SAML2 ACS Error', [
                 'idp' => $idp,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return redirect(config('beartropy-saml2.error_redirect', '/login'))
+                ->with('error', 'Authentication failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generic Assertion Consumer Service - auto-detect IDP from SAML response.
+     * 
+     * POST /saml2/acs (without IDP parameter)
+     */
+    public function acsAuto(Request $request)
+    {
+        try {
+            $result = $this->saml2Service->processAcsResponseAuto();
+            
+            // Store session info for potential SLO
+            session([
+                'saml2_idp' => $result['idpKey'],
+                'saml2_session_index' => $result['sessionIndex'],
+                'saml2_name_id' => $result['nameId'],
+            ]);
+
+            // The Saml2LoginEvent has been dispatched by the service
+            // The listener should handle authentication
+            
+            return redirect(config('beartropy-saml2.login_redirect', '/'));
+        } catch (\Throwable $e) {
+            Log::error('SAML2 ACS Auto Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

@@ -98,4 +98,29 @@ class IdpResolver
     {
         return $this->resolve($idpKey) !== null;
     }
+
+    /**
+     * Resolve an IDP by its entity_id (used for ACS response lookup).
+     */
+    public function resolveByEntityId(string $entityId): ?Saml2Idp
+    {
+        $source = config('beartropy-saml2.idp_source', 'database');
+
+        // Check env first if configured
+        if ($source === 'env' || $source === 'both') {
+            $envIdp = config('beartropy-saml2.default_idp');
+            if ($envIdp && ($envIdp['entityId'] ?? null) === $entityId) {
+                return $this->resolveFromEnv($envIdp['key'] ?? 'default');
+            }
+        }
+
+        // Check database
+        if ($source === 'database' || $source === 'both') {
+            return Saml2Idp::where('entity_id', $entityId)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        return null;
+    }
 }

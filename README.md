@@ -131,10 +131,13 @@ The package registers these routes:
 | Route | Method | Description |
 |-------|--------|-------------|
 | `/saml2/login/{idp?}` | GET | Initiate SSO login (idp optional, defaults to first active) |
-| `/saml2/acs/{idp}` | POST | Assertion Consumer Service |
+| `/saml2/acs` | POST | **Generic ACS** - auto-detects IDP from response |
+| `/saml2/acs/{idp}` | POST | ACS with explicit IDP key |
 | `/saml2/sls/{idp}` | GET/POST | Single Logout Service |
-| `/saml2/metadata` | GET | SP Metadata XML |
+| `/saml2/metadata` | GET | SP Metadata XML (uses generic ACS URL) |
 | `/saml2/logout/{idp?}` | GET | Initiate logout |
+
+> **Note**: El metadata SP ahora usa `/saml2/acs` (genérico), por lo que puedes registrar un único SP en múltiples IDPs sin preocuparte por URLs específicas.
 
 ## Configuration
 

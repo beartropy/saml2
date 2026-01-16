@@ -102,6 +102,49 @@ class Saml2Service
     public function processAcsResponse(string $idpKey): array
     {
         $idp = $this->idpResolver->resolve($idpKey);
+        
+        if (!$idp) {
+            throw new InvalidIdpException("IDP '{$idpKey}' not found");
+        }
+        
+        return $this->processAcsWithIdp($idp);
+    }
+
+    /**
+     * Process ACS response by extracting the Issuer (IDP EntityID) from the SAML response.
+     * This allows a single ACS URL for all IDPs.
+     */
+    public function processAcsResponseAuto(): array
+    {
+        // Extract the Issuer from the SAML response without full processing
+        $samlResponse = request()->input('SAMLResponse');
+        if (!$samlResponse) {
+            throw new Saml2Exception('No SAMLResponse found in request');
+        }
+
+        // Decode and parse to get Issuer
+        $xml = base64_decode($samlResponse);
+        $issuer = $this->extractIssuerFromResponse($xml);
+        
+        if (!$issuer) {
+            throw new Saml2Exception('Could not extract Issuer from SAML response');
+        }
+
+        // Find IDP by entity_id
+        $idp = $this->idpResolver->resolveByEntityId($issuer);
+        
+        if (!$idp) {
+            throw new InvalidIdpException("No IDP found with entity_id: {$issuer}");
+        }
+
+        return $this->processAcsWithIdp($idp);
+    }
+
+    /**
+     * Process ACS with a resolved IDP.
+     */
+    protected function processAcsWithIdp(Saml2Idp $idp): array
+    {
         $auth = $this->getAuth($idp);
         
         $auth->processResponse();
@@ -128,7 +171,7 @@ class Saml2Service
 
         // Dispatch event for the user to handle authentication
         event(new Saml2LoginEvent(
-            idpKey: $idpKey,
+            idpKey: $idp->key,
             nameId: $nameId,
             attributes: $mappedAttributes,
             rawAttributes: $attributes,
@@ -136,11 +179,37 @@ class Saml2Service
         ));
 
         return [
+            'idpKey' => $idp->key,
             'nameId' => $nameId,
             'attributes' => $mappedAttributes,
             'rawAttributes' => $attributes,
             'sessionIndex' => $sessionIndex,
         ];
+    }
+
+    /**
+     * Extract the Issuer element from a SAML response XML.
+     */
+    protected function extractIssuerFromResponse(string $xml): ?string
+    {
+        try {
+            $doc = new \DOMDocument();
+            $doc->loadXML($xml);
+            
+            $xpath = new \DOMXPath($doc);
+            $xpath->registerNamespace('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
+            $xpath->registerNamespace('samlp', 'urn:oasis:names:tc:SAML:2.0:protocol');
+            
+            // Try to find Issuer in the response
+            $issuers = $xpath->query('//saml:Issuer');
+            if ($issuers->length > 0) {
+                return trim($issuers->item(0)->textContent);
+            }
+            
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -202,7 +271,8 @@ class Saml2Service
             'sp' => [
                 'entityId' => $config['sp']['entityId'] ?? url('/'),
                 'assertionConsumerService' => [
-                    'url' => $config['sp']['acs_url'] ?? route('saml2.acs', ['idp' => 'default']),
+                    // Use generic ACS URL (auto-detects IDP from response)
+                    'url' => $config['sp']['acs_url'] ?? route('saml2.acs.auto'),
                     'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
                 ],
                 'singleLogoutService' => [
