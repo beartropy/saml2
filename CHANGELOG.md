@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-01-16
+
+### Changed
+- Attribute mapping is now stored in the database
+
+### Fixed
+- /metadata route now returns valid XML
+
 ## [0.1.0] - 2025-01-16
 
 ### Added

@@ -97,8 +97,9 @@ class CreateIdpCommand extends Command
         $ssoUrl = $this->ask('SSO URL');
         $sloUrl = $this->ask('SLO URL (optional)', '');
         
-        $this->info('Enter the x509 certificate (paste and press Enter twice when done):');
-        $x509cert = $this->askMultiline();
+        $this->info('x509 certificate (paste the certificate without headers, can be multiline):');
+        $this->line('  Tip: Copy from IDP metadata, it can include line breaks.');
+        $x509cert = $this->ask('Certificate');
 
         $data = [
             'entity_id' => $entityId,
@@ -172,23 +173,5 @@ class CreateIdpCommand extends Command
         // Remove headers, whitespace
         $cert = str_replace(['-----BEGIN CERTIFICATE-----', '-----END CERTIFICATE-----'], '', $cert);
         return preg_replace('/\s+/', '', $cert);
-    }
-
-    protected function askMultiline(): string
-    {
-        $lines = [];
-        $emptyCount = 0;
-        
-        while ($emptyCount < 1) {
-            $line = $this->ask('');
-            if (empty(trim($line))) {
-                $emptyCount++;
-            } else {
-                $emptyCount = 0;
-                $lines[] = $line;
-            }
-        }
-        
-        return implode("\n", $lines);
     }
 }

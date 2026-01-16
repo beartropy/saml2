@@ -187,9 +187,17 @@ class Saml2Service
     {
         $config = config('beartropy-saml2');
         
-        // Use default IDP settings for SP-only metadata
+        // Dummy certificate for placeholder IDP (required by onelogin library)
+        $dummyCert = 'MIICpDCCAYwCCQDU+pQ4P2DzJTANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls' .
+                     'b2NhbGhvc3QwHhcNMjQwMTAxMDAwMDAwWhcNMjUwMTAxMDAwMDAwWjAUMRIwEAYD' .
+                     'VQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC0' .
+                     'zKWv8qFq5SrM3aYq5tFh2zV5bxqtTZqNqsO4cEFQ2R3RxYKy9V9KqVNNqLWE1K1J' .
+                     'placeholder';
+        
+        // For SP metadata generation, we use non-strict mode since we don't 
+        // need a real IDP - we just need the SP configuration
         $settings = [
-            'strict' => $config['strict'] ?? true,
+            'strict' => false,  // Disable strict to avoid IDP validation
             'debug' => $config['debug'] ?? false,
             'sp' => [
                 'entityId' => $config['sp']['entityId'] ?? url('/'),
@@ -205,13 +213,13 @@ class Saml2Service
                 'x509cert' => $config['sp']['x509cert'] ?? '',
                 'privateKey' => $config['sp']['privateKey'] ?? '',
             ],
-            // Minimal IDP config (required by onelogin but not used for SP metadata)
+            // Minimal IDP config with dummy cert (required by onelogin library)
             'idp' => [
                 'entityId' => 'https://placeholder.example.com',
                 'singleSignOnService' => [
                     'url' => 'https://placeholder.example.com/sso',
                 ],
-                'x509cert' => '',
+                'x509cert' => $dummyCert,
             ],
         ];
 
