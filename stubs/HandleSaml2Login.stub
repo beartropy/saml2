@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Listeners;
+
+use Beartropy\Saml2\Events\Saml2LoginEvent;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+
+class HandleSaml2Login
+{
+    /**
+     * Handle the SAML2 login event.
+     */
+    public function handle(Saml2LoginEvent $event): void
+    {
+        $email = $event->getEmail();
+        $name = $event->getName();
+
+        // Obtener toda la data disponible
+        // $data = $event->toArray();
+
+        // Obtener atributos SAML originales
+        // $roles = $event->getRawAttribute('http://schemas.xmlsoap.org/claims/Group');
+
+        // Buscar o crear usuario
+        $user = User::firstOrCreate(
+            ['email' => $email],
+            ['name' => $name ?? $email]
+        );
+
+        // Opcional: actualizar datos del usuario
+        // $user->update(['name' => $name]);
+
+        // Opcional: asignar roles (si usas spatie/laravel-permission)
+        // if ($roles) {
+        //     $user->syncRoles($roles);
+        // }
+
+        // Autenticar al usuario
+        Auth::login($user, remember: true);
+    }
+}

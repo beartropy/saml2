@@ -1,0 +1,8 @@
+.DS_Store
+node_modules
+vendor
+*.log
+.env
+.phpunit.result.cache
+.idea
+.vscode

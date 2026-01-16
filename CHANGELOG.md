@@ -1,0 +1,15 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [0.1.0] - 2025-01-16
+
+### Added
+- Initial release
+- Multi-IDP support with database storage
+- Environment-based IDP configuration option
+- Artisan commands: `saml2:create-idp`, `saml2:list-idps`, `saml2:test-idp`, `saml2:delete-idp`, `saml2:generate-cert`, `saml2:refresh-metadata`
+- Event-driven authentication via `Saml2LoginEvent`
+- Metadata import from URL
+- SP metadata endpoint
+- Single Sign-On (SSO) and Single Logout (SLO) support
