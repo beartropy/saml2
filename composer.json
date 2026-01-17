@@ -1,6 +1,6 @@
 {
     "name": "beartropy/saml2",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "Multi-IDP SAML2 SP integration for Laravel using onelogin/php-saml",
     "license": "MIT",
     "keywords": [

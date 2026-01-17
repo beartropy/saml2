@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.2] - 2026-01-17
+
+### Added
+- Setup success page displaying SP metadata, configured routes, and next steps tips
+- `setup-success` route and controller method
+- English and Spanish translations for the success page
+
 ## [v0.2.1] - 2026-01-17
 
 ### Fixed
