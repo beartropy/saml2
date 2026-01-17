@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.3] - 2026-01-17
+
+### Changed
+- Modernized setup view aesthetics and improved UX.
+- Improved layout (single column stack) for better consistency.
+- Corrected copy button placement in textareas.
+
 ## [v0.2.2] - 2026-01-17
 
 ### Added

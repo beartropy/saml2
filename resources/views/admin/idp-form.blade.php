@@ -1,4 +1,4 @@
-@extends('beartropy-saml2::admin.partials.layout')
+@extends(config('beartropy-saml2.layout', 'beartropy-saml2::admin.partials.layout'))
 
 @section('title', $isEdit ? __('beartropy-saml2::saml2.admin.edit_idp') : __('beartropy-saml2::saml2.admin.create_idp'))
 

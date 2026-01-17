@@ -79,6 +79,7 @@ return [
     'admin_enabled' => env('SAML2_ADMIN_ENABLED', true),
     'admin_route_prefix' => env('SAML2_ADMIN_PREFIX', 'saml2/admin'),
     'admin_middleware' => ['web', 'auth'], // Customize to protect admin routes
+    'layout' => env('SAML2_ADMIN_LAYOUT', 'beartropy-saml2::admin.partials.layout'),
 
 
     /*
@@ -123,10 +124,13 @@ return [
     |
     */
     'attribute_mapping' => [
-        'email' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
-        'name' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-        'first_name' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname',
-        'last_name' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname',
+        'email' => 'email',
+        'name' => 'displayname',
+        'firstname' => 'firstname',
+        'lastname' => 'lastname',
+        'username' => 'username',
+        'roles' => 'roles',
+        'groups' => 'groups',
     ],
 
     /*
