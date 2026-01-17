@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.4] - 2026-01-17
+
+### Added
+- Comprehensive documentation in `docs/` directory:
+    - `CONFIG.md`: Configuration reference.
+    - `INSTALL.md`: Installation and migration guide.
+    - `SETUP.md`: First-deploy setup wizard and listener guide.
+    - `UI.md`: Admin panel management guide.
+    - `README.md`: Index for documentation navigation.
+
 ## [v0.2.3] - 2026-01-17
 
 ### Changed
