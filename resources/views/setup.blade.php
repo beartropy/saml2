@@ -132,7 +132,7 @@
                         @csrf
                         <div class="form-group">
                             <label>{{ __('beartropy-saml2::saml2.setup.paste_xml') }}</label>
-                            <textarea name="metadata_text" rows="6" placeholder="<?xml version='1.0'?>..."></textarea>
+                            <textarea name="metadata_text" rows="6" placeholder="&lt;?xml version=&quot;1.0&quot;?&gt;..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">{{ __('beartropy-saml2::saml2.setup.parse') }}</button>
                     </form>
