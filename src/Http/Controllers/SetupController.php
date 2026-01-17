@@ -43,6 +43,20 @@ class SetupController extends Controller
     }
 
     /**
+     * Show the success page after setup.
+     */
+    public function success(int $idp)
+    {
+        $idp = Saml2Idp::findOrFail($idp);
+        $spMetadata = $this->getSpMetadata();
+
+        return view('beartropy-saml2::setup-success', [
+            'idp' => $idp,
+            'spMetadata' => $spMetadata,
+        ]);
+    }
+
+    /**
      * Parse metadata from XML text.
      */
     public function parseText(Request $request)
@@ -141,7 +155,7 @@ class SetupController extends Controller
         ]);
 
         try {
-            Saml2Idp::create([
+            $idp = Saml2Idp::create([
                 'key' => $validated['idp_key'],
                 'name' => $validated['idp_name'],
                 'entity_id' => $validated['entity_id'],
@@ -154,8 +168,7 @@ class SetupController extends Controller
 
             Saml2Setting::markSetupComplete();
 
-            return redirect(config('beartropy-saml2.login_redirect', '/'))
-                ->with('success', __('beartropy-saml2::saml2.setup.idp_saved'));
+            return redirect()->route('saml2.setup.success', ['idp' => $idp->id]);
         } catch (\Throwable $e) {
             return redirect()->route('saml2.setup')
                 ->with('saml2_input_method', 'form')
@@ -173,6 +186,7 @@ class SetupController extends Controller
             return [
                 'xml' => $this->saml2Service->getMetadataXml(),
                 'url' => route('saml2.metadata'),
+                'metadataUrl' => route('saml2.metadata'),
                 'entityId' => config('beartropy-saml2.sp.entityId') ?: url('/'),
                 'acsUrl' => route('saml2.acs.auto'),
             ];
@@ -180,6 +194,7 @@ class SetupController extends Controller
             return [
                 'xml' => '',
                 'url' => route('saml2.metadata'),
+                'metadataUrl' => route('saml2.metadata'),
                 'entityId' => config('beartropy-saml2.sp.entityId') ?: url('/'),
                 'acsUrl' => route('saml2.acs.auto'),
             ];

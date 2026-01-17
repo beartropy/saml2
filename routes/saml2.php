@@ -11,6 +11,7 @@ Route::group([
 ], function () {
     // Setup wizard (first-deploy)
     Route::get('setup', [SetupController::class, 'index'])->name('saml2.setup');
+    Route::get('setup/success/{idp}', [SetupController::class, 'success'])->name('saml2.setup.success');
     Route::post('setup/parse-text', [SetupController::class, 'parseText'])->name('saml2.setup.parse-text');
     Route::post('setup/parse-xml', [SetupController::class, 'parseXml'])->name('saml2.setup.parse-xml');
     Route::post('setup/fetch-url', [SetupController::class, 'fetchFromUrl'])->name('saml2.setup.fetch-url');
