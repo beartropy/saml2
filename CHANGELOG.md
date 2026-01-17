@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.0] - 2026-01-17
+
+### Added
+- First-deploy setup wizard UI (`/saml2/setup`)
+- Admin management panel (`/saml2/admin`) for IDP CRUD
+- Attribute mapping editor per IDP
+- Client-side metadata fetch for better network compatibility
+- `Saml2Setting` model for setup state tracking
+- `saml2:reset-setup` Artisan command
+- English and Spanish translations
+- Configurable admin middleware and routes
+
+### Changed
+- UI is now vanilla (no Livewire/Tailwind dependencies)
+
 ## [0.1.4] - 2026-01-16
 
 ### Changed

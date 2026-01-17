@@ -70,6 +70,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Panel Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure the admin panel for managing IDPs and settings.
+    |
+    */
+    'admin_enabled' => env('SAML2_ADMIN_ENABLED', true),
+    'admin_route_prefix' => env('SAML2_ADMIN_PREFIX', 'saml2/admin'),
+    'admin_middleware' => ['web', 'auth'], // Customize to protect admin routes
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Redirect URLs
     |--------------------------------------------------------------------------
     |
