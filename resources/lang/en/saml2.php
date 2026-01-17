@@ -85,6 +85,7 @@ return [
         'save_failed' => 'Failed to save IDP configuration',
         'url_required' => 'Please enter a metadata URL',
         'fetch_failed' => 'Failed to fetch metadata',
+        'cors_fallback' => 'Client-side fetch failed (CORS). Try server-side fetch? Note: Server must have network access to the IDP.',
     ],
 ];
 

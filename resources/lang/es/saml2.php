@@ -85,5 +85,6 @@ return [
         'save_failed' => 'Error al guardar configuración del IDP',
         'url_required' => 'Por favor ingresa una URL de metadata',
         'fetch_failed' => 'Error al obtener metadata',
+        'cors_fallback' => 'Fetch desde cliente falló (CORS). ¿Intentar desde servidor? Nota: El servidor debe tener acceso de red al IDP.',
     ],
 ];

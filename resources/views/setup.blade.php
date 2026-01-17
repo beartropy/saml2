@@ -214,40 +214,65 @@
             text.textContent = '{{ __('beartropy-saml2::saml2.setup.loading') }}';
 
             try {
-                // Use server-side proxy to avoid CORS issues
-                const response = await fetch('{{ route('saml2.setup.fetch-url') }}', {
+                // Try client-side fetch first (uses user's network)
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const xml = await response.text();
+
+                // Send to server for parsing only
+                const parseResponse = await fetch('{{ route('saml2.setup.parse-xml') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ url: url })
+                    body: JSON.stringify({ xml: xml, source_url: url })
                 });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    // Fill form fields
-                    document.getElementById('form-entity-id').value = result.data.entity_id || '';
-                    document.getElementById('form-sso-url').value = result.data.sso_url || '';
-                    document.getElementById('form-slo-url').value = result.data.slo_url || '';
-                    document.getElementById('form-x509-cert').value = result.data.x509_cert || '';
-                    document.getElementById('form-idp-key').value = result.data.idp_key || '';
-                    document.getElementById('form-idp-name').value = result.data.idp_name || '';
-                    document.getElementById('form-metadata-url').value = result.data.metadata_url || url;
-
-                    // Switch to form tab
-                    showTab('form');
-                } else {
-                    throw new Error(result.error);
-                }
+                const result = await parseResponse.json();
+                handleFetchResult(result, url);
             } catch (e) {
-                errorEl.textContent = '{{ __('beartropy-saml2::saml2.errors.fetch_failed') }}: ' + e.message;
-                errorEl.classList.remove('hidden');
+                // If CORS or network error, offer server-side fallback
+                if (confirm('{{ __('beartropy-saml2::saml2.errors.cors_fallback') }}')) {
+                    try {
+                        const response = await fetch('{{ route('saml2.setup.fetch-url') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ url: url })
+                        });
+                        const result = await response.json();
+                        handleFetchResult(result, url);
+                    } catch (e2) {
+                        errorEl.textContent = '{{ __('beartropy-saml2::saml2.errors.fetch_failed') }}: ' + e2.message;
+                        errorEl.classList.remove('hidden');
+                    }
+                } else {
+                    errorEl.textContent = '{{ __('beartropy-saml2::saml2.errors.fetch_failed') }}: ' + e.message;
+                    errorEl.classList.remove('hidden');
+                }
             } finally {
                 btn.disabled = false;
                 spinner.classList.add('hidden');
                 text.textContent = '{{ __('beartropy-saml2::saml2.setup.fetch') }}';
+            }
+        }
+
+        function handleFetchResult(result, url) {
+            const errorEl = document.getElementById('url-error');
+            if (result.success) {
+                document.getElementById('form-entity-id').value = result.data.entity_id || '';
+                document.getElementById('form-sso-url').value = result.data.sso_url || '';
+                document.getElementById('form-slo-url').value = result.data.slo_url || '';
+                document.getElementById('form-x509-cert').value = result.data.x509_cert || '';
+                document.getElementById('form-idp-key').value = result.data.idp_key || '';
+                document.getElementById('form-idp-name').value = result.data.idp_name || '';
+                document.getElementById('form-metadata-url').value = result.data.metadata_url || url;
+                showTab('form');
+            } else {
+                throw new Error(result.error);
             }
         }
     </script>
