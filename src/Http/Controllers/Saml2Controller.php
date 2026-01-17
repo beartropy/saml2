@@ -110,14 +110,21 @@ class Saml2Controller extends Controller
             // The listener should handle authentication
             
             return redirect(config('beartropy-saml2.login_redirect', '/'));
+        } catch (InvalidIdpException $e) {
+            // IDP configuration error - redirect with message
+            Log::error('SAML2 ACS: Invalid IDP', ['error' => $e->getMessage()]);
+            
+            return redirect(config('beartropy-saml2.error_redirect', '/login'))
+                ->with('error', 'Invalid identity provider configuration');
         } catch (\Throwable $e) {
+            // All other errors (including listener errors) - abort to prevent loops
             Log::error('SAML2 ACS Auto Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
             
-            return redirect(config('beartropy-saml2.error_redirect', '/login'))
-                ->with('error', 'Authentication failed: ' . $e->getMessage());
+            // Abort with 500 to prevent redirect loops
+            abort(500, 'SAML Authentication Error: ' . $e->getMessage());
         }
     }
 
