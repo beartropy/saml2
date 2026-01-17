@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.5] - 2026-01-17
+
+### Added
+- English translation for all documentation files.
+- Language selector in `docs/README.md`.
+
+### Changed
+- Reorganized documentation folder structure:
+    - `docs/en/`: English documentation.
+    - `docs/es/`: Spanish documentation.
+- Updated root `README.md` with links to multi-language documentation.
+
 ## [v0.2.4] - 2026-01-17
 
 ### Added
