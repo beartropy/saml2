@@ -6,10 +6,12 @@ Multi-IDP SAML2 Service Provider integration for Laravel using [onelogin/php-sam
 
 - 🔐 Configure your Laravel app as a SAML 2.0 Service Provider
 - 🏢 Support for multiple Identity Providers (Azure AD, Okta, ADFS, etc.)
+- 🖥️ **Web UI** for first-deploy setup and admin management
 - 📦 IDP configuration from environment variables or database
 - 🔄 Automatic metadata import from IDP URLs
 - 🎯 Event-driven authentication (handle login your way)
 - ⚙️ Artisan commands for IDP management
+- 🌐 English and Spanish translations included
 
 ## Installation
 
@@ -17,19 +19,37 @@ Multi-IDP SAML2 Service Provider integration for Laravel using [onelogin/php-sam
 composer require beartropy/saml2
 ```
 
-Publish the configuration and migrations:
+Publish the configuration and run migrations:
 
 ```bash
 php artisan vendor:publish --tag=beartropy-saml2-config
-php artisan vendor:publish --tag=beartropy-saml2-migrations
 php artisan migrate
 ```
 
 ## Quick Start
 
-### 1. Configure your Service Provider
+### Option A: Using the Setup Wizard (Recommended)
 
-Add these to your `.env`:
+After installation, simply navigate to:
+
+```
+https://your-app.com/saml2/setup
+```
+
+The **First-Deploy Setup Wizard** will guide you through:
+1. Displaying your SP metadata (Entity ID, ACS URL, Metadata URL) to share with your IDP administrator
+2. Configuring your IDP via:
+   - **Metadata URL** - Fetch and parse automatically
+   - **Paste XML** - Copy/paste metadata from your IDP
+   - **Manual Entry** - Enter Entity ID, SSO URL, Certificate manually
+
+> **Note**: The setup wizard is only accessible before the first IDP is configured. After that, use the Admin Panel.
+
+### Option B: Using Artisan Commands
+
+#### 1. Configure your Service Provider
+
+Add to your `.env`:
 
 ```env
 SAML2_SP_ENTITY_ID=https://your-app.com
@@ -41,7 +61,7 @@ For signed assertions (recommended), generate SP certificates:
 php artisan saml2:generate-cert
 ```
 
-### 2. Add an Identity Provider
+#### 2. Add an Identity Provider
 
 From a metadata URL:
 ```bash
@@ -53,49 +73,112 @@ Or interactively:
 php artisan saml2:create-idp azure --interactive
 ```
 
-### 3. Handle Authentication Events
+---
 
-Publica un listener standard:
+## Admin Panel
+
+Once configured, manage your SAML2 settings through the web-based admin panel:
+
+```
+https://your-app.com/saml2/admin
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Dashboard** | View SP metadata and list all configured IDPs |
+| **Create IDP** | Add new Identity Providers with metadata import |
+| **Edit IDP** | Modify IDP settings (Entity ID, SSO URL, Certificate, etc.) |
+| **Attribute Mapping** | Configure per-IDP attribute mapping or use global config |
+| **Toggle Status** | Activate/deactivate IDPs without deleting |
+| **Refresh Metadata** | Auto-update IDP settings from metadata URL |
+| **Delete IDP** | Remove an IDP from database |
+
+### Admin Configuration
+
+Customize the admin panel in `config/beartropy-saml2.php`:
+
+```php
+// Enable/disable admin panel
+'admin_enabled' => env('SAML2_ADMIN_ENABLED', true),
+
+// Route prefix (default: /saml2/admin)
+'admin_route_prefix' => env('SAML2_ADMIN_PREFIX', 'saml2/admin'),
+
+// Middleware to protect admin routes
+'admin_middleware' => ['web', 'auth'],  // Add 'admin' or custom middleware as needed
+```
+
+#### Protecting Admin Routes
+
+Add your own authorization middleware:
+
+```php
+// config/beartropy-saml2.php
+'admin_middleware' => ['web', 'auth', 'can:manage-saml'],
+```
+
+Or use a Gate in your `AuthServiceProvider`:
+
+```php
+Gate::define('manage-saml', function ($user) {
+    return $user->hasRole('admin');
+});
+```
+
+---
+
+## Handle Authentication Events
+
+Publish a standard listener:
 
 ```bash
 php artisan saml2:publish-listener
 ```
 
-Esto crea `app/Listeners/HandleSaml2Login.php` que puedes personalizar:
+This creates `app/Listeners/HandleSaml2Login.php`:
 
 ```php
-// Busca/crea usuario y lo autentica
-$user = User::firstOrCreate(
-    ['email' => $event->getEmail()],
-    ['name' => $event->getName()]
-);
-Auth::login($user);
+public function handle(Saml2LoginEvent $event): void
+{
+    // Find or create user
+    $user = User::firstOrCreate(
+        ['email' => $event->getEmail()],
+        ['name' => $event->getName()]
+    );
+    
+    // Log them in
+    Auth::login($user);
+}
 ```
 
-> **Note**: En Laravel 11/12, los eventos se descubren automáticamente.
+> **Note**: In Laravel 11/12, events are auto-discovered.
 
-### 4. Integrate with Your Routes
+---
 
-**Simple** - un link de login:
+## Integrate with Your Routes
+
+**Simple** - a login link:
 ```html
 <a href="{{ route('saml2.login', ['idp' => 'azure']) }}">
     Login with Azure AD
 </a>
 ```
 
-**Integración completa** - reemplazando rutas de auth:
+**Full Integration** - replacing auth routes:
 ```php
 // routes/auth.php
 
 Route::middleware('guest')->group(function () {
     if (app()->environment('local')) {
-        // Login local para desarrollo
+        // Local login for development
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [AuthController::class, 'authenticate']);
     } else {
-        // SAML Login - redirige al IDP
+        // SAML Login - redirects to IDP
         Route::get('/login', function () {
-            return redirect()->route('saml2.login', ['idp' => 'tu-idp-key']);
+            return redirect()->route('saml2.login', ['idp' => 'your-idp-key']);
         })->name('login');
     }
 });
@@ -112,6 +195,8 @@ Route::middleware('auth')->group(function () {
 });
 ```
 
+---
+
 ## Artisan Commands
 
 | Command | Description |
@@ -123,23 +208,118 @@ Route::middleware('auth')->group(function () {
 | `saml2:generate-cert` | Generate SP certificates |
 | `saml2:refresh-metadata` | Refresh IDP metadata from URLs |
 | `saml2:publish-listener` | Publish standard login listener |
+| `saml2:reset-setup` | Reset to first-deploy state |
+
+### Reset Setup Command
+
+If you need to reconfigure from scratch:
+
+```bash
+# Reset setup state only (keeps IDPs)
+php artisan saml2:reset-setup
+
+# Reset setup state AND delete all IDPs
+php artisan saml2:reset-setup --with-idps
+```
+
+After running this, the setup wizard at `/saml2/setup` will be accessible again.
+
+---
 
 ## Routes
 
 The package registers these routes:
 
+### SAML Routes
+
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/saml2/login/{idp?}` | GET | Initiate SSO login (idp optional, defaults to first active) |
-| `/saml2/acs` | POST | **Generic ACS** - auto-detects IDP from response |
+| `/saml2/setup` | GET | First-deploy setup wizard |
+| `/saml2/login/{idp?}` | GET | Initiate SSO login |
+| `/saml2/acs` | POST | Generic ACS - auto-detects IDP |
 | `/saml2/acs/{idp}` | POST | ACS with explicit IDP key |
 | `/saml2/sls/{idp}` | GET/POST | Single Logout Service |
-| `/saml2/metadata` | GET | SP Metadata XML (uses generic ACS URL) |
+| `/saml2/metadata` | GET | SP Metadata XML |
 | `/saml2/logout/{idp?}` | GET | Initiate logout |
 
-> **Note**: El metadata SP ahora usa `/saml2/acs` (genérico), por lo que puedes registrar un único SP en múltiples IDPs sin preocuparte por URLs específicas.
+### Admin Routes
 
-## Configuration
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/saml2/admin` | GET | Admin dashboard |
+| `/saml2/admin/idp/create` | GET | Create IDP form |
+| `/saml2/admin/idp` | POST | Store new IDP |
+| `/saml2/admin/idp/{id}` | GET/PUT | Edit/update IDP |
+| `/saml2/admin/idp/{id}` | DELETE | Delete IDP |
+| `/saml2/admin/idp/{id}/toggle` | POST | Activate/deactivate |
+| `/saml2/admin/idp/{id}/mapping` | GET/POST | Attribute mapping editor |
+| `/saml2/admin/idp/{id}/refresh` | POST | Refresh metadata |
+
+---
+
+## Attribute Mapping
+
+Attribute mapping allows you to normalize SAML attributes from different IDPs.
+
+### Global Mapping (Config)
+
+Set default mapping in `config/beartropy-saml2.php`:
+
+```php
+'attribute_mapping' => [
+    'email' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+    'name' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+    'first_name' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname',
+    'last_name' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname',
+],
+```
+
+### Per-IDP Mapping (Admin Panel or Code)
+
+Each IDP can have custom mapping that overrides the global config.
+
+**Via Admin Panel:**
+1. Go to `/saml2/admin`
+2. Click "Mapping" on any IDP
+3. Toggle "Use global mapping" off
+4. Add your custom field mappings
+
+**Via Code:**
+
+```php
+use Beartropy\Saml2\Models\Saml2Idp;
+
+$idp = Saml2Idp::where('key', 'azure')->first();
+$idp->attribute_mapping = [
+    'email' => 'http://schemas.microsoft.com/identity/claims/emailaddress',
+    'name' => 'http://schemas.microsoft.com/identity/claims/displayname',
+    'roles' => 'http://schemas.microsoft.com/ws/2008/06/identity/claims/groups',
+];
+$idp->save();
+```
+
+### Using Attributes in Your Listener
+
+```php
+public function handle(Saml2LoginEvent $event): void
+{
+    // Mapped attributes (uses IDP-specific or falls back to global)
+    $email = $event->getEmail();              // Shorthand
+    $name = $event->getName();                // Shorthand
+    $custom = $event->getAttribute('roles');  // Custom mapped field
+    
+    // Raw SAML attributes (always available)
+    $rawEmail = $event->getRawAttribute('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress');
+    
+    // All data
+    $allMapped = $event->attributes;
+    $allRaw = $event->rawAttributes;
+}
+```
+
+---
+
+## Configuration Reference
 
 ### IDP Source
 
@@ -166,32 +346,15 @@ SAML2_IDP_SLO_URL=https://idp.example.com/slo
 SAML2_IDP_CERT="MIICpDCCAYwCCQ..."
 ```
 
-### Attribute Mapping (Optional)
-
-El mapeo de atributos es **opcional**. Siempre tienes acceso a los atributos SAML originales via `$event->rawAttributes`. 
-
-**Mapping global** (en config):
-```php
-'attribute_mapping' => [
-    'email' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
-    'name' => 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-],
-```
-
-**Mapping por IDP** (en base de datos):
-
-Cada IDP puede tener su propio mapping guardado en la columna `attribute_mapping`. Si está vacío, usa el mapping global como fallback.
+### Redirects
 
 ```php
-// Configurar mapping específico para un IDP
-$idp = Saml2Idp::where('key', 'azure')->first();
-$idp->attribute_mapping = [
-    'email' => 'http://schemas.microsoft.com/identity/claims/emailaddress',
-    'name' => 'http://schemas.microsoft.com/identity/claims/displayname',
-    'roles' => 'http://schemas.microsoft.com/ws/2008/06/identity/claims/groups',
-];
-$idp->save();
+'login_redirect' => env('SAML2_LOGIN_REDIRECT', '/'),
+'logout_redirect' => env('SAML2_LOGOUT_REDIRECT', '/'),
+'error_redirect' => env('SAML2_ERROR_REDIRECT', '/login'),
 ```
+
+---
 
 ## Events
 
@@ -199,38 +362,30 @@ $idp->save();
 
 Dispatched after successful SAML authentication.
 
-**Propiedades públicas:**
+**Properties:**
 ```php
-$event->idpKey       // Key del IDP que autenticó
-$event->nameId       // SAML NameID (usualmente email)
-$event->attributes   // Atributos mapeados (según config)
-$event->rawAttributes // Atributos SAML originales
-$event->sessionIndex // Para SLO
+$event->idpKey       // Key of the authenticating IDP
+$event->nameId       // SAML NameID (usually email)
+$event->attributes   // Mapped attributes (per config)
+$event->rawAttributes // Original SAML attributes
+$event->sessionIndex // For SLO
 ```
 
-**Métodos helper:**
+**Helper Methods:**
 ```php
-// Obtener email (busca en múltiples fuentes comunes)
-$event->getEmail();
-
-// Obtener nombre
-$event->getName();
-
-// Obtener atributo mapeado
-$event->getAttribute('email');
-$event->getAttribute('custom_field', 'default_value');
-
-// Obtener atributo SAML original
-$event->getRawAttribute('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role');
-
-// Obtener toda la data como array
-$event->toArray();
-// Retorna: idp_key, name_id, email, name, attributes, raw_attributes, session_index
+$event->getEmail();                    // Get email
+$event->getName();                     // Get name
+$event->getAttribute('field');          // Get mapped attribute
+$event->getAttribute('field', 'default'); // With default
+$event->getRawAttribute('saml_uri');    // Get raw SAML attribute
+$event->toArray();                      // All data as array
 ```
 
 ### Saml2LogoutEvent
 
 Dispatched after successful SAML logout.
+
+---
 
 ## Security
 
@@ -245,6 +400,34 @@ For production environments, enable signature and encryption:
 ```
 
 Generate SP certificates first with `php artisan saml2:generate-cert`.
+
+---
+
+## Internationalization
+
+The package includes English and Spanish translations. To publish and customize:
+
+```bash
+php artisan vendor:publish --tag=beartropy-saml2-lang
+```
+
+This creates files in `lang/vendor/beartropy-saml2/`.
+
+---
+
+## Customizing Views
+
+To customize the setup wizard or admin panel views:
+
+```bash
+php artisan vendor:publish --tag=beartropy-saml2-views
+```
+
+This publishes views to `resources/views/vendor/beartropy-saml2/`.
+
+> **Note**: The UI is vanilla HTML/CSS (no Tailwind or Livewire dependencies), so it works with any Laravel stack.
+
+---
 
 ## License
 
