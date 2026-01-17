@@ -97,6 +97,35 @@ class SetupController extends Controller
     }
 
     /**
+     * Fetch metadata from URL server-side (proxy for CORS issues).
+     */
+    public function fetchFromUrl(Request $request)
+    {
+        $request->validate([
+            'url' => 'required|url',
+        ]);
+
+        try {
+            $data = $this->metadataParser->parseFromUrl($request->input('url'));
+            
+            $formData = $this->prepareFormData($data);
+            $formData['metadata_url'] = $request->input('url');
+            
+            return response()->json([
+                'success' => true,
+                'data' => $formData,
+                'message' => __('beartropy-saml2::saml2.setup.metadata_parsed'),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error' => __('beartropy-saml2::saml2.errors.fetch_failed') . ': ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+
+    /**
      * Save the IDP configuration.
      */
     public function save(Request $request)

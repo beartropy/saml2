@@ -214,22 +214,17 @@
             text.textContent = '{{ __('beartropy-saml2::saml2.setup.loading') }}';
 
             try {
-                // Fetch from client side
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                const xml = await response.text();
-
-                // Send to server for parsing
-                const parseResponse = await fetch('{{ route('saml2.setup.parse-xml') }}', {
+                // Use server-side proxy to avoid CORS issues
+                const response = await fetch('{{ route('saml2.setup.fetch-url') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ xml: xml, source_url: url })
+                    body: JSON.stringify({ url: url })
                 });
 
-                const result = await parseResponse.json();
+                const result = await response.json();
 
                 if (result.success) {
                     // Fill form fields

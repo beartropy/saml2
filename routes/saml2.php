@@ -13,6 +13,7 @@ Route::group([
     Route::get('setup', [SetupController::class, 'index'])->name('saml2.setup');
     Route::post('setup/parse-text', [SetupController::class, 'parseText'])->name('saml2.setup.parse-text');
     Route::post('setup/parse-xml', [SetupController::class, 'parseXml'])->name('saml2.setup.parse-xml');
+    Route::post('setup/fetch-url', [SetupController::class, 'fetchFromUrl'])->name('saml2.setup.fetch-url');
     Route::post('setup/save', [SetupController::class, 'save'])->name('saml2.setup.save');
 
     // SSO Login - redirect to IDP (if no idp specified, uses first active)
