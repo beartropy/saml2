@@ -429,6 +429,17 @@ This publishes views to `resources/views/vendor/beartropy-saml2/`.
 
 ---
 
+## Documentation
+
+For more detailed information, please refer to the following guides:
+
+- **[English Documentation](docs/en/README.md)**
+- **[Documentación en Español](docs/es/README.md)**
+
+Includes detailed guides for [Configuration](docs/en/CONFIG.md), [Installation](docs/en/INSTALL.md), [Initial Setup](docs/en/SETUP.md), and the [Admin UI](docs/en/UI.md).
+
+---
+
 ## License
 
 MIT License - see [LICENSE.md](LICENSE.md)
