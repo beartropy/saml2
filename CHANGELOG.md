@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.1] - 2026-01-17
+
+### Fixed
+- Escape XML placeholder in setup view to prevent PHP parse error
+- Hybrid client/server metadata fetch with CORS fallback prompt
+
 ## [v0.2.0] - 2026-01-17
 
 ### Added
