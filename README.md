@@ -21,9 +21,9 @@
 - ⚙️ Artisan commands for IDP management
 - 🌐 English and Spanish translations included
 
-## � Documentation
+## 📚 Documentation
 
-�👉 **[Read the full documentation at beartropy.com/permissions](https://beartropy.com/permissions)**
+�👉 **[Read the full documentation at beartropy.com/saml2](https://beartropy.com/saml2)**
 
 ## Installation
 
