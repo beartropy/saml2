@@ -9,13 +9,15 @@ Route::group([
     'prefix' => config('beartropy-saml2.route_prefix', 'saml2'),
     'middleware' => config('beartropy-saml2.route_middleware', ['web']),
 ], function () {
-    // Setup wizard (first-deploy)
-    Route::get('setup', [SetupController::class, 'index'])->name('saml2.setup');
-    Route::get('setup/success/{idp}', [SetupController::class, 'success'])->name('saml2.setup.success');
-    Route::post('setup/parse-text', [SetupController::class, 'parseText'])->name('saml2.setup.parse-text');
-    Route::post('setup/parse-xml', [SetupController::class, 'parseXml'])->name('saml2.setup.parse-xml');
-    Route::post('setup/fetch-url', [SetupController::class, 'fetchFromUrl'])->name('saml2.setup.fetch-url');
-    Route::post('setup/save', [SetupController::class, 'save'])->name('saml2.setup.save');
+    // Setup wizard (first-deploy) - only for database-based IDP storage
+    if (config('beartropy-saml2.idp_source', 'database') !== 'env') {
+        Route::get('setup', [SetupController::class, 'index'])->name('saml2.setup');
+        Route::get('setup/success/{idp}', [SetupController::class, 'success'])->name('saml2.setup.success');
+        Route::post('setup/parse-text', [SetupController::class, 'parseText'])->name('saml2.setup.parse-text');
+        Route::post('setup/parse-xml', [SetupController::class, 'parseXml'])->name('saml2.setup.parse-xml');
+        Route::post('setup/fetch-url', [SetupController::class, 'fetchFromUrl'])->name('saml2.setup.fetch-url');
+        Route::post('setup/save', [SetupController::class, 'save'])->name('saml2.setup.save');
+    }
 
     // SSO Login - redirect to IDP (if no idp specified, uses first active)
     Route::get('login/{idp?}', [Saml2Controller::class, 'login'])

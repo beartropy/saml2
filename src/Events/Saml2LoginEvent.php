@@ -51,6 +51,22 @@ class Saml2LoginEvent
     }
 
     /**
+     * Get all mapped attributes.
+     */
+    public function getAttributes(): array
+    {
+        return $this->attributes;
+    }
+
+    /**
+     * Get all raw SAML attributes.
+     */
+    public function getRawAttributes(): array
+    {
+        return $this->rawAttributes;
+    }
+
+    /**
      * Get the email from common attribute sources.
      */
     public function getEmail(): ?string

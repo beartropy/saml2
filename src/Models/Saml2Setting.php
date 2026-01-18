@@ -38,10 +38,16 @@ class Saml2Setting extends Model
 
     /**
      * Check if the setup has been completed (not first deploy).
+     * Returns true if the table doesn't exist (for env-only setups without migrations).
      */
     public static function isSetupComplete(): bool
     {
-        return static::get('setup_complete') === 'true';
+        try {
+            return static::get('setup_complete') === 'true';
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Table doesn't exist - treat as setup complete (env-only mode)
+            return true;
+        }
     }
 
     /**
