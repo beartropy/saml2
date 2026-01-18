@@ -75,11 +75,16 @@ return [
     |
     | Configure the admin panel for managing IDPs and settings.
     |
+    | The 'layout' option allows you to integrate the admin views into your
+    | application's layout. Set this to a Blade component name that accepts
+    | a $slot for content. For example: 'layouts.app' or 'layouts.admin'.
+    | When null, the package uses its own standalone layout.
+    |
     */
     'admin_enabled' => env('SAML2_ADMIN_ENABLED', true),
     'admin_route_prefix' => env('SAML2_ADMIN_PREFIX', 'saml2/admin'),
     'admin_middleware' => ['web', 'auth'], // Customize to protect admin routes
-    'layout' => env('SAML2_ADMIN_LAYOUT', 'beartropy-saml2::admin.partials.layout'),
+    'layout' => env('SAML2_ADMIN_LAYOUT'),
 
 
     /*

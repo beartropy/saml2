@@ -1,8 +1,4 @@
-@extends(config('beartropy-saml2.layout', 'beartropy-saml2::admin.partials.layout'))
-
-@section('title', $isEdit ? __('beartropy-saml2::saml2.admin.edit_idp') : __('beartropy-saml2::saml2.admin.create_idp'))
-
-@section('content')
+<x-beartropy-saml2::admin-layout :title="$isEdit ? __('beartropy-saml2::saml2.admin.edit_idp') : __('beartropy-saml2::saml2.admin.create_idp')">
     <div class="card">
         <div class="card-header">
             <h2>{{ $isEdit ? __('beartropy-saml2::saml2.admin.edit_idp') : __('beartropy-saml2::saml2.admin.create_idp') }}</h2>
@@ -96,59 +92,59 @@
             </form>
         </div>
     </div>
-@endsection
 
-@section('scripts')
-<script>
-    async function fetchMetadata() {
-        const url = document.getElementById('import-url').value;
-        const errorEl = document.getElementById('import-error');
-        const btn = document.getElementById('import-btn');
+    <x-slot:scripts>
+    <script>
+        async function fetchMetadata() {
+            const url = document.getElementById('import-url').value;
+            const errorEl = document.getElementById('import-error');
+            const btn = document.getElementById('import-btn');
 
-        if (!url) {
-            errorEl.textContent = '{{ __('beartropy-saml2::saml2.errors.url_required') }}';
-            errorEl.style.display = 'block';
-            return;
-        }
-
-        errorEl.style.display = 'none';
-        btn.disabled = true;
-        btn.textContent = '{{ __('beartropy-saml2::saml2.setup.loading') }}';
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            const xml = await response.text();
-
-            const parseResponse = await fetch('{{ route('saml2.admin.parse-metadata') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ xml: xml })
-            });
-
-            const result = await parseResponse.json();
-
-            if (result.success) {
-                document.getElementById('entity_id').value = result.data.entity_id || '';
-                document.getElementById('sso_url').value = result.data.sso_url || '';
-                document.getElementById('slo_url').value = result.data.slo_url || '';
-                document.getElementById('x509_cert').value = result.data.x509_cert || '';
-                document.getElementById('idp_key').value = result.data.idp_key || '';
-                document.getElementById('idp_name').value = result.data.idp_name || '';
-                document.getElementById('metadata_url').value = url;
-            } else {
-                throw new Error(result.error);
+            if (!url) {
+                errorEl.textContent = '{{ __('beartropy-saml2::saml2.errors.url_required') }}';
+                errorEl.style.display = 'block';
+                return;
             }
-        } catch (e) {
-            errorEl.textContent = '{{ __('beartropy-saml2::saml2.errors.fetch_failed') }}: ' + e.message;
-            errorEl.style.display = 'block';
-        } finally {
-            btn.disabled = false;
-            btn.textContent = '{{ __('beartropy-saml2::saml2.setup.fetch') }}';
+
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = '{{ __('beartropy-saml2::saml2.setup.loading') }}';
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const xml = await response.text();
+
+                const parseResponse = await fetch('{{ route('saml2.admin.parse-metadata') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ xml: xml })
+                });
+
+                const result = await parseResponse.json();
+
+                if (result.success) {
+                    document.getElementById('entity_id').value = result.data.entity_id || '';
+                    document.getElementById('sso_url').value = result.data.sso_url || '';
+                    document.getElementById('slo_url').value = result.data.slo_url || '';
+                    document.getElementById('x509_cert').value = result.data.x509_cert || '';
+                    document.getElementById('idp_key').value = result.data.idp_key || '';
+                    document.getElementById('idp_name').value = result.data.idp_name || '';
+                    document.getElementById('metadata_url').value = url;
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (e) {
+                errorEl.textContent = '{{ __('beartropy-saml2::saml2.errors.fetch_failed') }}: ' + e.message;
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '{{ __('beartropy-saml2::saml2.setup.fetch') }}';
+            }
         }
-    }
-</script>
-@endsection
+    </script>
+    </x-slot:scripts>
+</x-beartropy-saml2::admin-layout>

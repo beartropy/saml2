@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.7] - 2026-01-18
+
+### Changed
+- Refactored admin views to use slot-based component layout system
+- Admin views now work with custom component layouts that use `{{ $slot }}`
+- Updated `layout` config to accept component names (e.g., `layouts.app`) instead of view paths
+- Scoped admin styles with `.saml2-admin-wrapper` prefix to avoid conflicts with custom layouts
+
+
 ## [v0.2.6] - 2026-01-18
 
 ### Changed

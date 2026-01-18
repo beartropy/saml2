@@ -1,8 +1,4 @@
-@extends(config('beartropy-saml2.layout', 'beartropy-saml2::admin.partials.layout'))
-
-@section('title', __('beartropy-saml2::saml2.admin.dashboard'))
-
-@section('content')
+<x-beartropy-saml2::admin-layout :title="__('beartropy-saml2::saml2.admin.dashboard')">
     {{-- SP Metadata Card --}}
     <div class="card">
         <div class="card-header">
@@ -115,4 +111,4 @@
             @endif
         </div>
     </div>
-@endsection
+</x-beartropy-saml2::admin-layout>

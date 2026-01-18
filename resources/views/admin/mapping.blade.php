@@ -1,8 +1,4 @@
-@extends(config('beartropy-saml2.layout', 'beartropy-saml2::admin.partials.layout'))
-
-@section('title', __('beartropy-saml2::saml2.admin.edit_mapping'))
-
-@section('content')
+<x-beartropy-saml2::admin-layout :title="__('beartropy-saml2::saml2.admin.edit_mapping')">
     <div class="card">
         <div class="card-header">
             <h2>{{ __('beartropy-saml2::saml2.admin.edit_mapping') }}: {{ $idp->name }}</h2>
@@ -94,32 +90,32 @@
             </form>
         </div>
     </div>
-@endsection
 
-@section('scripts')
-<script>
-    function toggleMapping() {
-        const useGlobal = document.getElementById('use_global').checked;
-        document.getElementById('global-mapping').classList.toggle('hidden', !useGlobal);
-        document.getElementById('custom-mapping').classList.toggle('hidden', useGlobal);
-    }
-
-    function addRow() {
-        const tbody = document.querySelector('#mapping-table tbody');
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td><input type="text" name="mapping_key[]" placeholder="field_name" style="width: 150px;"></td>
-            <td><input type="text" name="mapping_value[]" placeholder="http://schemas..." style="width: 350px;"></td>
-            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">×</button></td>
-        `;
-        tbody.appendChild(row);
-    }
-
-    function removeRow(btn) {
-        const tbody = document.querySelector('#mapping-table tbody');
-        if (tbody.children.length > 1) {
-            btn.closest('tr').remove();
+    <x-slot:scripts>
+    <script>
+        function toggleMapping() {
+            const useGlobal = document.getElementById('use_global').checked;
+            document.getElementById('global-mapping').classList.toggle('hidden', !useGlobal);
+            document.getElementById('custom-mapping').classList.toggle('hidden', useGlobal);
         }
-    }
-</script>
-@endsection
+
+        function addRow() {
+            const tbody = document.querySelector('#mapping-table tbody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="mapping_key[]" placeholder="field_name" style="width: 150px;"></td>
+                <td><input type="text" name="mapping_value[]" placeholder="http://schemas..." style="width: 350px;"></td>
+                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">×</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function removeRow(btn) {
+            const tbody = document.querySelector('#mapping-table tbody');
+            if (tbody.children.length > 1) {
+                btn.closest('tr').remove();
+            }
+        }
+    </script>
+    </x-slot:scripts>
+</x-beartropy-saml2::admin-layout>
