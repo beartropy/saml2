@@ -1,7 +1,7 @@
 <div align="center">
     <h1>🛡️ Beartropy SAML2</h1>
     <p><strong>Multi-IDP SAML2 Service Provider integration for Laravel using <a href="https://github.com/onelogin/php-saml">onelogin/php-saml</a></strong></p>
-    <p>Manage roles, permissions, and user assignments with ease</p>
+    <p>Integrate your Laravel app with multiple Identity Providers (Azure AD, Okta, ADFS, etc.)</p>
 </div>
 
 <div align="center">
@@ -10,7 +10,6 @@
     <a href="https://packagist.org/packages/beartropy/saml2"><img src="https://img.shields.io/packagist/l/beartropy/saml2?style=flat-square&color=slate" alt="License"></a>
 </div>
 
-👉 **[Read the full documentation at beartropy.com/saml2](https://beartropy.com/saml2)**
 ## Features
 
 - 🔐 Configure your Laravel app as a SAML 2.0 Service Provider
@@ -21,6 +20,10 @@
 - 🎯 Event-driven authentication (handle login your way)
 - ⚙️ Artisan commands for IDP management
 - 🌐 English and Spanish translations included
+
+## � Documentation
+
+�👉 **[Read the full documentation at beartropy.com/permissions](https://beartropy.com/permissions)**
 
 ## Installation
 
