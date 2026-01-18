@@ -23,7 +23,7 @@
 
 ## 📚 Documentation
 
-�👉 **[Read the full documentation at beartropy.com/saml2](https://beartropy.com/saml2)**
+👉 **[Read the full documentation at beartropy.com/saml2](https://beartropy.com/saml2)**
 
 ## Installation
 
