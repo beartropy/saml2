@@ -5,7 +5,7 @@
 @if($customLayout)
     {{-- Custom component layout - render content as slot --}}
     <x-dynamic-component :component="$customLayout">
-        @include('beartropy-saml2::admin.partials.styles')
+        @include('beartropy-saml2::admin.partials.styles', ['hasMaxWidth' => false])
         
         <div class="saml2-admin-wrapper">
             @if(session('success'))

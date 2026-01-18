@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.8] - 2026-01-18
+
+### Added
+- Dark mode support for admin views (supports `prefers-color-scheme` and `.dark` class)
+
+### Changed  
+- Removed `max-width` constraint when using a custom layout (full width)
+
 ## [v0.2.7] - 2026-01-18
 
 ### Changed
