@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.2.6] - 2026-01-18
+
+### Changed
+- Added `getAttributes()` and `getRawAttributes()` to `Saml2LoginEvent`
+- Improved `env` source support by making migrations optional
+- Conditional setup routes based on `idp_source` configuration
+
 ## [v0.2.5] - 2026-01-17
 
 ### Added
