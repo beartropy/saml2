@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static string login(string $idpKey, ?string $returnTo = null)
  * @method static array processAcsResponse(string $idpKey)
  * @method static string logout(string $idpKey, ?string $returnTo = null, ?string $nameId = null, ?string $sessionIndex = null)
- * @method static ?string processSlo(string $idpKey, callable $keepLocalSession = null)
+ * @method static ?string processSlo(string $idpKey, callable $cbDeleteSession = null)
  * @method static string getMetadataXml()
  * @method static \Beartropy\Saml2\Services\IdpResolver getIdpResolver()
  * @method static \Beartropy\Saml2\Services\MetadataParser getMetadataParser()

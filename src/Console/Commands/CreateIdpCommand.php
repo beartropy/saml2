@@ -4,6 +4,7 @@ namespace Beartropy\Saml2\Console\Commands;
 
 use Beartropy\Saml2\Models\Saml2Idp;
 use Beartropy\Saml2\Services\MetadataParser;
+use Beartropy\Saml2\Support\CertificateHelper;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -105,7 +106,7 @@ class CreateIdpCommand extends Command
             'entity_id' => $entityId,
             'sso_url' => $ssoUrl,
             'slo_url' => $sloUrl ?: null,
-            'x509_cert' => $this->cleanCertificate($x509cert),
+            'x509_cert' => CertificateHelper::clean($x509cert),
         ];
 
         return $this->saveIdp($key, $name, $data);
@@ -124,7 +125,7 @@ class CreateIdpCommand extends Command
                 'entity_id' => $data['entity_id'],
                 'sso_url' => $data['sso_url'],
                 'slo_url' => $data['slo_url'] ?? null,
-                'x509_cert' => $this->cleanCertificate($data['x509_cert']),
+                'x509_cert' => CertificateHelper::clean($data['x509_cert']),
                 'x509_cert_multi' => $data['x509_cert_multi'] ?? null,
                 'metadata_url' => $data['metadata_url'] ?? null,
             ]);
@@ -137,7 +138,7 @@ class CreateIdpCommand extends Command
                 'entity_id' => $data['entity_id'],
                 'sso_url' => $data['sso_url'],
                 'slo_url' => $data['slo_url'] ?? null,
-                'x509_cert' => $this->cleanCertificate($data['x509_cert']),
+                'x509_cert' => CertificateHelper::clean($data['x509_cert']),
                 'x509_cert_multi' => $data['x509_cert_multi'] ?? null,
                 'metadata_url' => $data['metadata_url'] ?? null,
                 'is_active' => true,
@@ -168,10 +169,4 @@ class CreateIdpCommand extends Command
         return Str::title(str_replace(['.', '-'], ' ', $host));
     }
 
-    protected function cleanCertificate(string $cert): string
-    {
-        // Remove headers, whitespace
-        $cert = str_replace(['-----BEGIN CERTIFICATE-----', '-----END CERTIFICATE-----'], '', $cert);
-        return preg_replace('/\s+/', '', $cert);
-    }
 }

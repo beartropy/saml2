@@ -5,6 +5,7 @@ namespace Beartropy\Saml2\Http\Controllers;
 use Beartropy\Saml2\Exceptions\InvalidIdpException;
 use Beartropy\Saml2\Models\Saml2Idp;
 use Beartropy\Saml2\Services\Saml2Service;
+use Beartropy\Saml2\Support\UrlValidator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
@@ -33,7 +34,10 @@ class Saml2Controller extends Controller
                 $idp = $firstIdp->key;
             }
 
-            $returnTo = $request->query('returnTo', config('beartropy-saml2.login_redirect', '/'));
+            $returnTo = UrlValidator::sanitizeRedirect(
+                $request->query('returnTo', config('beartropy-saml2.login_redirect', '/')),
+                config('beartropy-saml2.login_redirect', '/')
+            );
             $redirectUrl = $this->saml2Service->login($idp, $returnTo);
             
             return redirect($redirectUrl);
@@ -66,6 +70,9 @@ class Saml2Controller extends Controller
         try {
             $result = $this->saml2Service->processAcsResponse($idp);
             
+            // Regenerate session to prevent fixation attacks
+            session()->regenerate();
+
             // Store session info for potential SLO
             session([
                 'saml2_idp' => $result['idpKey'] ?? $idp,
@@ -75,17 +82,16 @@ class Saml2Controller extends Controller
 
             // The Saml2LoginEvent has been dispatched by the service
             // The listener should handle authentication
-            
+
             return redirect(config('beartropy-saml2.login_redirect', '/'));
         } catch (\Throwable $e) {
             Log::error('SAML2 ACS Error', [
                 'idp' => $idp,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return redirect(config('beartropy-saml2.error_redirect', '/login'))
-                ->with('error', 'Authentication failed: ' . $e->getMessage());
+                ->with('error', 'Authentication failed');
         }
     }
 
@@ -99,6 +105,9 @@ class Saml2Controller extends Controller
         try {
             $result = $this->saml2Service->processAcsResponseAuto();
             
+            // Regenerate session to prevent fixation attacks
+            session()->regenerate();
+
             // Store session info for potential SLO
             session([
                 'saml2_idp' => $result['idpKey'],
@@ -108,7 +117,7 @@ class Saml2Controller extends Controller
 
             // The Saml2LoginEvent has been dispatched by the service
             // The listener should handle authentication
-            
+
             return redirect(config('beartropy-saml2.login_redirect', '/'));
         } catch (InvalidIdpException $e) {
             // IDP configuration error - redirect with message
@@ -120,11 +129,10 @@ class Saml2Controller extends Controller
             // All other errors (including listener errors) - abort to prevent loops
             Log::error('SAML2 ACS Auto Error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
             
             // Abort with 500 to prevent redirect loops
-            abort(500, 'SAML Authentication Error: ' . $e->getMessage());
+            abort(500, 'SAML Authentication Error');
         }
     }
 
@@ -174,7 +182,7 @@ class Saml2Controller extends Controller
                 'error' => $e->getMessage(),
             ]);
             
-            return response('Error generating metadata: ' . $e->getMessage(), 500);
+            return response('Error generating metadata', 500);
         }
     }
 
@@ -196,7 +204,10 @@ class Saml2Controller extends Controller
 
             $nameId = session('saml2_name_id');
             $sessionIndex = session('saml2_session_index');
-            $returnTo = $request->query('returnTo', config('beartropy-saml2.logout_redirect', '/'));
+            $returnTo = UrlValidator::sanitizeRedirect(
+                $request->query('returnTo', config('beartropy-saml2.logout_redirect', '/')),
+                config('beartropy-saml2.logout_redirect', '/')
+            );
 
             $redirectUrl = $this->saml2Service->logout($idp, $returnTo, $nameId, $sessionIndex);
             

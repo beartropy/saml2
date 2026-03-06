@@ -14,8 +14,9 @@ class MetadataParser
     {
         libxml_use_internal_errors(true);
         $doc = new \DOMDocument();
-        
-        if (!$doc->loadXML($xml)) {
+        $doc->substituteEntities = false;
+
+        if (!$doc->loadXML($xml, LIBXML_NONET | LIBXML_NOENT)) {
             $errors = libxml_get_errors();
             libxml_clear_errors();
             throw new Saml2Exception('Invalid XML: ' . ($errors[0]->message ?? 'Unknown error'));
@@ -85,6 +86,10 @@ class MetadataParser
             throw new Saml2Exception('Metadata import from URL is disabled');
         }
 
+        if (config('beartropy-saml2.block_private_metadata_urls', true)) {
+            $this->validateUrlNotInternal($url);
+        }
+
         $response = Http::timeout(30)
             ->withOptions(['verify' => true])
             ->get($url);
@@ -99,6 +104,30 @@ class MetadataParser
         $result['metadata_url'] = $url;
         
         return $result;
+    }
+
+    /**
+     * Validate that a URL does not point to internal/private network addresses.
+     */
+    protected function validateUrlNotInternal(string $url): void
+    {
+        $parsed = parse_url($url);
+        $host = $parsed['host'] ?? '';
+        $scheme = strtolower($parsed['scheme'] ?? '');
+
+        if (!in_array($scheme, ['http', 'https'])) {
+            throw new Saml2Exception('Only HTTP and HTTPS URLs are allowed');
+        }
+
+        // Resolve hostname to IP to prevent DNS rebinding of private IPs
+        $ip = gethostbyname($host);
+        if ($ip === $host && !filter_var($host, FILTER_VALIDATE_IP)) {
+            throw new Saml2Exception('Could not resolve hostname');
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            throw new Saml2Exception('URLs pointing to private or reserved IP ranges are not allowed');
+        }
     }
 
     /**

@@ -29,6 +29,14 @@ class Saml2Idp extends Model
     ];
 
     /**
+     * The attributes that should be hidden for serialization.
+     */
+    protected $hidden = [
+        'x509_cert',
+        'x509_cert_multi',
+    ];
+
+    /**
      * The attributes that should be cast.
      */
     protected $casts = [

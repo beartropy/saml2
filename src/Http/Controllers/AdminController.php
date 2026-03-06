@@ -5,6 +5,7 @@ namespace Beartropy\Saml2\Http\Controllers;
 use Beartropy\Saml2\Models\Saml2Idp;
 use Beartropy\Saml2\Services\MetadataParser;
 use Beartropy\Saml2\Services\Saml2Service;
+use Beartropy\Saml2\Support\CertificateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
@@ -55,7 +56,7 @@ class AdminController extends Controller
                 'entity_id' => $validated['entity_id'],
                 'sso_url' => $validated['sso_url'],
                 'slo_url' => $validated['slo_url'] ?? null,
-                'x509_cert' => $this->cleanCertificate($validated['x509_cert']),
+                'x509_cert' => CertificateHelper::clean($validated['x509_cert']),
                 'metadata_url' => $validated['metadata_url'] ?? null,
                 'is_active' => $request->boolean('is_active', true),
             ]);
@@ -91,12 +92,12 @@ class AdminController extends Controller
 
         try {
             $idp->update([
-                'key' => $validated['idp_key'],
+                'key' => $idp->key, // Key is immutable after creation
                 'name' => $validated['idp_name'],
                 'entity_id' => $validated['entity_id'],
                 'sso_url' => $validated['sso_url'],
                 'slo_url' => $validated['slo_url'] ?? null,
-                'x509_cert' => $this->cleanCertificate($validated['x509_cert']),
+                'x509_cert' => CertificateHelper::clean($validated['x509_cert']),
                 'metadata_url' => $validated['metadata_url'] ?? null,
                 'is_active' => $request->boolean('is_active', true),
             ]);
@@ -272,12 +273,4 @@ class AdminController extends Controller
         }
     }
 
-    /**
-     * Clean certificate string.
-     */
-    protected function cleanCertificate(string $cert): string
-    {
-        $cert = str_replace(['-----BEGIN CERTIFICATE-----', '-----END CERTIFICATE-----'], '', $cert);
-        return preg_replace('/\s+/', '', $cert);
-    }
 }

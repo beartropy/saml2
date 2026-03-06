@@ -19,16 +19,10 @@ class Saml2ServiceProvider extends ServiceProvider
             'beartropy-saml2'
         );
 
-        // Register services as singletons
-        $this->app->singleton(IdpResolver::class, function ($app) {
-            return new IdpResolver();
-        });
+        $this->app->bind(IdpResolver::class);
+        $this->app->bind(MetadataParser::class);
 
-        $this->app->singleton(MetadataParser::class, function ($app) {
-            return new MetadataParser();
-        });
-
-        $this->app->singleton(Saml2Service::class, function ($app) {
+        $this->app->bind(Saml2Service::class, function ($app) {
             return new Saml2Service(
                 $app->make(IdpResolver::class),
                 $app->make(MetadataParser::class)

@@ -66,7 +66,8 @@ return [
     |
     */
     'route_prefix' => env('SAML2_ROUTE_PREFIX', 'saml2'),
-    'route_middleware' => ['web'],
+    'route_middleware' => ['web', 'throttle:60,1'],
+    'setup_middleware' => ['web', 'auth', 'throttle:10,1'],
 
     /*
     |--------------------------------------------------------------------------
@@ -119,6 +120,10 @@ return [
     */
     'allow_metadata_import' => env('SAML2_ALLOW_METADATA_IMPORT', true),
 
+    // Block metadata URLs pointing to private/reserved IPs (SSRF protection).
+    // Set to false if your IDP is on an internal network.
+    'block_private_metadata_urls' => env('SAML2_BLOCK_PRIVATE_URLS', true),
+
     /*
     |--------------------------------------------------------------------------
     | Attribute Mapping
@@ -152,8 +157,8 @@ return [
         'logoutRequestSigned' => false,
         'logoutResponseSigned' => false,
         'signMetadata' => false,
-        'wantMessagesSigned' => false,
-        'wantAssertionsSigned' => false,
+        'wantMessagesSigned' => env('SAML2_WANT_MESSAGES_SIGNED', true),
+        'wantAssertionsSigned' => env('SAML2_WANT_ASSERTIONS_SIGNED', true),
         'wantAssertionsEncrypted' => false,
         'wantNameIdEncrypted' => false,
         'requestedAuthnContext' => true,

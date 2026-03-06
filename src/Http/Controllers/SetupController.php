@@ -6,6 +6,7 @@ use Beartropy\Saml2\Models\Saml2Idp;
 use Beartropy\Saml2\Models\Saml2Setting;
 use Beartropy\Saml2\Services\MetadataParser;
 use Beartropy\Saml2\Services\Saml2Service;
+use Beartropy\Saml2\Support\CertificateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
@@ -161,7 +162,7 @@ class SetupController extends Controller
                 'entity_id' => $validated['entity_id'],
                 'sso_url' => $validated['sso_url'],
                 'slo_url' => $validated['slo_url'] ?? null,
-                'x509_cert' => $this->cleanCertificate($validated['x509_cert']),
+                'x509_cert' => CertificateHelper::clean($validated['x509_cert']),
                 'metadata_url' => $validated['metadata_url'] ?? null,
                 'is_active' => true,
             ]);
@@ -220,12 +221,4 @@ class SetupController extends Controller
         ];
     }
 
-    /**
-     * Clean certificate string.
-     */
-    protected function cleanCertificate(string $cert): string
-    {
-        $cert = str_replace(['-----BEGIN CERTIFICATE-----', '-----END CERTIFICATE-----'], '', $cert);
-        return preg_replace('/\s+/', '', $cert);
-    }
 }

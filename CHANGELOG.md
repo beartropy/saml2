@@ -2,6 +2,78 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.0] - 2026-03-05
+
+### ⚠ BREAKING — Security Hardening Release
+
+This release fixes critical security vulnerabilities. **Upgrading requires action.**
+
+### Upgrade Steps
+
+1. **Run migrations** — A new migration widens `entity_id`, `sso_url`, `slo_url`, and `metadata_url` columns from `VARCHAR(255)` to `TEXT`:
+   ```bash
+   php artisan migrate
+   ```
+
+2. **Re-publish your config** (or merge manually):
+   ```bash
+   php artisan vendor:publish --tag=beartropy-saml2-config --force
+   ```
+
+3. **Signed assertions are now required by default.**
+   `wantMessagesSigned` and `wantAssertionsSigned` now default to `true`. If your IDP does not send signed SAML assertions, authentication will fail.
+   - **Recommended:** Configure your IDP to sign assertions (most IDPs support this).
+   - **Temporary workaround:** Set in your `.env`:
+     ```
+     SAML2_WANT_MESSAGES_SIGNED=false
+     SAML2_WANT_ASSERTIONS_SIGNED=false
+     ```
+
+4. **Setup wizard now requires authentication.**
+   The setup routes now use `['web', 'auth', 'throttle:10,1']` middleware by default. Users must be logged in to access `/saml2/setup`. If you need unauthenticated setup access, customize `setup_middleware` in your config.
+
+5. **SAML routes now include rate limiting.**
+   `route_middleware` defaults to `['web', 'throttle:60,1']`. If your application does not define the `throttle` middleware alias, either register it or override `route_middleware` in your config.
+
+6. **Metadata URL fetching now blocks private/reserved IPs.**
+   Server-side metadata fetching rejects URLs pointing to private networks (10.x, 172.16.x, 192.168.x, 169.254.x, localhost). If your IDP metadata is on an internal network, set in your `.env`:
+   ```
+   SAML2_BLOCK_PRIVATE_URLS=false
+   ```
+
+7. **`processSlo()` parameter renamed.**
+   If you call `processSlo()` using the named argument `keepLocalSession:`, rename it to `cbDeleteSession:`. Positional calls are unaffected.
+
+### Fixed (Security)
+- **XXE injection** in XML metadata parsing and SAML response issuer extraction — external entities are now disabled
+- **Open redirect** via `returnTo` query parameter on login/logout routes — only relative paths are now accepted
+- **SSRF** via server-side metadata URL fetching — private/reserved IP ranges are now blocked by default
+- **Unauthenticated setup wizard** — setup routes now require `auth` middleware and rate limiting
+- **Information disclosure** — error messages no longer expose internal exception details to users
+- **Session fixation** — session ID is regenerated after successful SAML authentication
+- **Unsigned assertions accepted** — `wantMessagesSigned` and `wantAssertionsSigned` now default to `true`
+
+### Fixed (Bugs)
+- `processSlo()` parameter name now matches its actual purpose (`cbDeleteSession` instead of `keepLocalSession`)
+- `PublishListenerCommand` no longer claims the listener is auto-discovered (manual registration required)
+- `updateIdp()` now enforces IDP key immutability server-side (was only enforced client-side via `readonly` attribute)
+- Removed unused `$index` variable in attribute mapping Blade template
+- Database columns `entity_id`, `sso_url`, `slo_url`, `metadata_url` widened from `VARCHAR(255)` to `TEXT`
+
+### Added
+- `CertificateHelper::clean()` shared utility (replaces duplicated `cleanCertificate` in 3 files)
+- `UrlValidator::sanitizeRedirect()` for safe redirect URL handling
+- `block_private_metadata_urls` config option for SSRF protection toggle
+- `setup_middleware` config option for independent setup route middleware
+- `$hidden` on `Saml2Idp` model to prevent `x509_cert` from leaking in JSON serialization
+- Rate limiting on SAML routes (`throttle:60,1`) and setup routes (`throttle:10,1`)
+- `SAML2_WANT_MESSAGES_SIGNED` and `SAML2_WANT_ASSERTIONS_SIGNED` env variable support
+
+### Changed
+- Service registration changed from `singleton()` to `bind()` (services are stateless)
+- Metadata generation now uses first real IDP configuration instead of a hardcoded dummy certificate
+- Inline security fallback defaults now match config defaults
+
 ## [v0.2.8] - 2026-01-18
 
 ### Added

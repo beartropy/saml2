@@ -65,8 +65,8 @@ class Saml2Service
                 'logoutRequestSigned' => false,
                 'logoutResponseSigned' => false,
                 'signMetadata' => false,
-                'wantMessagesSigned' => false,
-                'wantAssertionsSigned' => false,
+                'wantMessagesSigned' => true,
+                'wantAssertionsSigned' => true,
                 'wantAssertionsEncrypted' => false,
                 'wantNameIdEncrypted' => false,
             ],
@@ -194,7 +194,8 @@ class Saml2Service
     {
         try {
             $doc = new \DOMDocument();
-            $doc->loadXML($xml);
+            $doc->substituteEntities = false;
+            $doc->loadXML($xml, LIBXML_NONET | LIBXML_NOENT);
             
             $xpath = new \DOMXPath($doc);
             $xpath->registerNamespace('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
@@ -226,16 +227,19 @@ class Saml2Service
 
     /**
      * Process the SLS (Single Logout Service) response/request.
+     *
+     * @param string $idpKey
+     * @param callable|null $cbDeleteSession Callback to handle session deletion
      */
-    public function processSlo(string $idpKey, callable $keepLocalSession = null): ?string
+    public function processSlo(string $idpKey, ?callable $cbDeleteSession = null): ?string
     {
         $auth = $this->getAuth($idpKey);
-        
+
         $redirectUrl = $auth->processSLO(
             keepLocalSession: false,
             requestId: null,
             retrieveParametersFromServer: false,
-            cbDeleteSession: $keepLocalSession
+            cbDeleteSession: $cbDeleteSession
         );
 
         $errors = $auth->getErrors();
@@ -255,23 +259,24 @@ class Saml2Service
     public function getMetadataXml(): string
     {
         $config = config('beartropy-saml2');
-        
-        // Dummy certificate for placeholder IDP (required by onelogin library)
-        $dummyCert = 'MIICpDCCAYwCCQDU+pQ4P2DzJTANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls' .
-                     'b2NhbGhvc3QwHhcNMjQwMTAxMDAwMDAwWhcNMjUwMTAxMDAwMDAwWjAUMRIwEAYD' .
-                     'VQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC0' .
-                     'zKWv8qFq5SrM3aYq5tFh2zV5bxqtTZqNqsO4cEFQ2R3RxYKy9V9KqVNNqLWE1K1J' .
-                     'placeholder';
-        
-        // For SP metadata generation, we use non-strict mode since we don't 
-        // need a real IDP - we just need the SP configuration
+
+        // Try to use a real IDP for metadata generation; fall back to placeholder
+        $firstIdp = $this->idpResolver->all()->first();
+        $idpConfig = $firstIdp
+            ? $firstIdp->toIdpSettings()
+            : [
+                'entityId' => 'https://placeholder.example.com',
+                'singleSignOnService' => ['url' => 'https://placeholder.example.com/sso'],
+                'x509cert' => 'placeholder',
+            ];
+
+        // Non-strict mode for metadata generation (IDP config may be a placeholder)
         $settings = [
-            'strict' => false,  // Disable strict to avoid IDP validation
+            'strict' => false,
             'debug' => $config['debug'] ?? false,
             'sp' => [
                 'entityId' => $config['sp']['entityId'] ?? url('/'),
                 'assertionConsumerService' => [
-                    // Use generic ACS URL (auto-detects IDP from response)
                     'url' => $config['sp']['acs_url'] ?? route('saml2.acs.auto'),
                     'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
                 ],
@@ -283,14 +288,7 @@ class Saml2Service
                 'x509cert' => $config['sp']['x509cert'] ?? '',
                 'privateKey' => $config['sp']['privateKey'] ?? '',
             ],
-            // Minimal IDP config with dummy cert (required by onelogin library)
-            'idp' => [
-                'entityId' => 'https://placeholder.example.com',
-                'singleSignOnService' => [
-                    'url' => 'https://placeholder.example.com/sso',
-                ],
-                'x509cert' => $dummyCert,
-            ],
+            'idp' => $idpConfig,
         ];
 
         $samlSettings = new Settings($settings);

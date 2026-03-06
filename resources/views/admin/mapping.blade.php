@@ -55,7 +55,6 @@
                         <tbody>
                             @php
                                 $mapping = $idp->attribute_mapping ?? $globalMapping;
-                                $index = 0;
                             @endphp
                             @forelse($mapping as $key => $value)
                                 <tr>
@@ -63,7 +62,6 @@
                                     <td><input type="text" name="mapping_value[]" value="{{ $value }}" placeholder="http://schemas..." style="width: 350px;"></td>
                                     <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">×</button></td>
                                 </tr>
-                                @php $index++; @endphp
                             @empty
                                 <tr>
                                     <td><input type="text" name="mapping_key[]" value="" placeholder="email" style="width: 150px;"></td>

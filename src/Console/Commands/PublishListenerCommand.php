@@ -37,8 +37,9 @@ class PublishListenerCommand extends Command
 
         $this->info('✓ Published: app/Listeners/HandleSaml2Login.php');
         $this->line('');
-        $this->line('The listener will be auto-discovered by Laravel.');
-        $this->line('Edit it to customize your authentication logic.');
+        $this->line('Register the listener in your EventServiceProvider or add the');
+        $this->line('#[AsListener] attribute to enable it. Then edit it to customize');
+        $this->line('your authentication logic.');
 
         return self::SUCCESS;
     }
