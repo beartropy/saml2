@@ -15,13 +15,15 @@ El setup inicial consiste en:
 
 ## Opción A: Setup Wizard (Recomendado)
 
-El Setup Wizard es la forma más fácil de configurar SAML2. Está disponible solo **antes de configurar el primer IDP**.
+El Setup Wizard es la forma más fácil de configurar SAML2. Está disponible solo **antes de configurar el primer IDP**. Desde v0.3.0, el wizard de setup **requiere autenticación** — debes estar logueado para acceder.
 
 ### Acceder al Wizard
 
 ```
 https://tu-app.com/saml2/setup
 ```
+
+> **Importante**: Debes estar autenticado para acceder al wizard de setup. El middleware por defecto es `['web', 'auth', 'throttle:10,1']`. Personaliza via la opción `setup_middleware` en la configuración.
 
 ### Paso 1: Revisar Metadata del SP
 
@@ -230,6 +232,36 @@ class HandleSaml2Login
 }
 ```
 
+> **Nota**: El listener **no** se auto-descubre. Debes registrarlo manualmente en tu `EventServiceProvider` o usar el atributo `#[AsListener]` (Laravel 11+).
+
+### Registrar el Listener
+
+El listener debe registrarse manualmente. Elige uno de estos métodos:
+
+**Opción 1: EventServiceProvider (Laravel 10/11)**
+
+```php
+// app/Providers/EventServiceProvider.php
+protected $listen = [
+    \Beartropy\Saml2\Events\Saml2LoginEvent::class => [
+        \App\Listeners\HandleSaml2Login::class,
+    ],
+];
+```
+
+**Opción 2: Atributo `#[AsListener]` (Laravel 11+)**
+
+```php
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
+use Illuminate\Events\Attributes\AsListener;
+
+#[AsListener(Saml2LoginEvent::class)]
+class HandleSaml2Login
+{
+    // ...
+}
+```
+
 ### Personalizar el Listener
 
 Puedes extender el listener para:
@@ -412,6 +444,8 @@ Después de esto, el wizard estará disponible nuevamente en `/saml2/setup`.
 - [ ] Middleware de admin configurado (opcional)
 - [ ] Mapeo de atributos configurado (si es necesario)
 - [ ] Probado el flujo completo de login
+- [ ] Wizard de setup accedido estando autenticado (requerido desde v0.3.0)
+- [ ] Listener registrado en EventServiceProvider o con `#[AsListener]`
 
 ---
 

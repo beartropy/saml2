@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.1] - 2026-03-05
+
+### Added
+- **Test suite** — 62 tests (138 assertions) covering units, features, admin CRUD, routes, login flow, metadata, session keys, model behavior, events, and security helpers
+- **IDP resolution caching** — database lookups cached with configurable TTL (`cache_idp_ttl`, default 5 min)
+- **SP metadata caching** — XML metadata cached with configurable TTL (`cache_metadata_ttl`, default 1 hour)
+- **Configurable session prefix** — `session_prefix` config option prevents key collisions in multi-package setups
+- **`IdpRequest` Form Request** — validation logic extracted from `AdminController` into a dedicated request class
+- **Enriched `Saml2LogoutEvent`** — now includes `nameId` and `sessionIndex` alongside `idpKey`
+
+### Changed
+- Admin routes use **route model binding** (`{idp}` instead of `{id}` with manual `findOrFail`)
+- `AdminController` uses `IdpRequest` Form Request instead of inline validation
+- `AdminController` clears IDP cache on update, delete, toggle, and refresh operations
+- `Saml2Controller` uses configurable session prefix for all session keys
+- CSRF exclusion now lists both `VerifyCsrfToken` and `ValidateCsrfToken` for **Laravel 11/12 compatibility**
+- `Saml2Idp` model enforces **key immutability** at the model level via `updating` event
+
+### Removed
+- Dead `user_model` config option (was never referenced in source code)
+
+### Fixed
+- README corrected: event listener is not auto-discovered, must be registered manually
+- README updated with auth requirement for setup wizard and v0.3.0 security defaults
+
 ## [v0.3.0] - 2026-03-05
 
 ### ⚠ BREAKING — Security Hardening Release

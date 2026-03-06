@@ -47,6 +47,18 @@ class Saml2Idp extends Model
     ];
 
     /**
+     * Prevent key from being changed after creation.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (Saml2Idp $idp) {
+            if ($idp->isDirty('key')) {
+                $idp->key = $idp->getOriginal('key');
+            }
+        });
+    }
+
+    /**
      * Scope to only include active IDPs.
      */
     public function scopeActive($query)

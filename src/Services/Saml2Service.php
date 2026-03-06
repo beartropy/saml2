@@ -8,6 +8,7 @@ use Beartropy\Saml2\Exceptions\InvalidIdpException;
 use Beartropy\Saml2\Exceptions\Saml2Exception;
 use Beartropy\Saml2\Models\Saml2Idp;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
 use OneLogin\Saml2\Auth;
 use OneLogin\Saml2\Settings;
 
@@ -231,7 +232,7 @@ class Saml2Service
      * @param string $idpKey
      * @param callable|null $cbDeleteSession Callback to handle session deletion
      */
-    public function processSlo(string $idpKey, ?callable $cbDeleteSession = null): ?string
+    public function processSlo(string $idpKey, ?callable $cbDeleteSession = null, ?string $nameId = null, ?string $sessionIndex = null): ?string
     {
         $auth = $this->getAuth($idpKey);
 
@@ -247,16 +248,30 @@ class Saml2Service
             throw new Saml2Exception('SAML SLO Error: ' . implode(', ', $errors));
         }
 
-        // Dispatch logout event
-        event(new Saml2LogoutEvent($idpKey));
+        // Dispatch logout event with user context
+        event(new Saml2LogoutEvent($idpKey, $nameId, $sessionIndex));
 
         return $redirectUrl;
     }
 
     /**
-     * Generate SP metadata XML.
+     * Generate SP metadata XML, with optional caching.
      */
     public function getMetadataXml(): string
+    {
+        $ttl = (int) config('beartropy-saml2.cache_metadata_ttl', 3600);
+
+        if ($ttl > 0) {
+            return Cache::remember('saml2_sp_metadata', $ttl, fn () => $this->generateMetadataXml());
+        }
+
+        return $this->generateMetadataXml();
+    }
+
+    /**
+     * Generate SP metadata XML.
+     */
+    protected function generateMetadataXml(): string
     {
         $config = config('beartropy-saml2');
 
@@ -293,7 +308,7 @@ class Saml2Service
 
         $samlSettings = new Settings($settings);
         $metadata = $samlSettings->getSPMetadata();
-        
+
         $errors = $samlSettings->validateMetadata($metadata);
         if (!empty($errors)) {
             throw new Saml2Exception('Invalid SP Metadata: ' . implode(', ', $errors));

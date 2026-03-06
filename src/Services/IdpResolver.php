@@ -4,6 +4,7 @@ namespace Beartropy\Saml2\Services;
 
 use Beartropy\Saml2\Models\Saml2Idp;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class IdpResolver
 {
@@ -51,13 +52,25 @@ class IdpResolver
     }
 
     /**
-     * Resolve IDP from database.
+     * Resolve IDP from database, with optional caching.
      */
     public function resolveFromDatabase(string $idpKey): ?Saml2Idp
     {
-        return Saml2Idp::where('key', $idpKey)
-            ->where('is_active', true)
-            ->first();
+        $ttl = (int) config('beartropy-saml2.cache_idp_ttl', 300);
+
+        if ($ttl <= 0) {
+            return Saml2Idp::where('key', $idpKey)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        return Cache::remember(
+            "saml2_idp:{$idpKey}",
+            $ttl,
+            fn () => Saml2Idp::where('key', $idpKey)
+                ->where('is_active', true)
+                ->first()
+        );
     }
 
     /**
@@ -79,7 +92,7 @@ class IdpResolver
         // Add database IDPs
         if ($source === 'database' || $source === 'both') {
             $dbIdps = Saml2Idp::where('is_active', true)->get();
-            
+
             // Merge, avoiding duplicates by key
             foreach ($dbIdps as $dbIdp) {
                 if (!$idps->contains('key', $dbIdp->key)) {
@@ -122,5 +135,15 @@ class IdpResolver
         }
 
         return null;
+    }
+
+    /**
+     * Clear cached IDP data.
+     */
+    public function clearCache(?string $idpKey = null): void
+    {
+        if ($idpKey) {
+            Cache::forget("saml2_idp:{$idpKey}");
+        }
     }
 }

@@ -4,8 +4,8 @@ Esta guía cubre el proceso completo de instalación del paquete `beartropy/saml
 
 ## Requisitos Previos
 
-- **PHP** 8.1 o superior
-- **Laravel** 10.x, 11.x o 12.x
+- **PHP** 8.2 o superior
+- **Laravel** 11.x o 12.x
 - Extensión **openssl** de PHP
 - Extensión **dom** de PHP
 
@@ -57,12 +57,12 @@ php artisan migrate
 | `id` | bigint | ID autoincremental |
 | `key` | string | Identificador único del IDP (slug) |
 | `name` | string | Nombre legible del IDP |
-| `entity_id` | string | Entity ID del IDP |
-| `sso_url` | string | URL de Single Sign-On |
-| `slo_url` | string (nullable) | URL de Single Logout |
+| `entity_id` | text | Entity ID del IDP |
+| `sso_url` | text | URL de Single Sign-On |
+| `slo_url` | text (nullable) | URL de Single Logout |
 | `x509_cert` | text | Certificado X.509 del IDP |
 | `x509_cert_multi` | json (nullable) | Múltiples certificados |
-| `metadata_url` | string (nullable) | URL del metadata para refrescar |
+| `metadata_url` | text (nullable) | URL del metadata para refrescar |
 | `metadata` | json (nullable) | Datos adicionales de configuración |
 | `attribute_mapping` | json (nullable) | Mapeo de atributos personalizado |
 | `is_active` | boolean | Estado activo/inactivo del IDP |
@@ -183,7 +183,7 @@ class HandleSaml2Login
 }
 ```
 
-> **Nota**: En Laravel 11/12, los eventos se auto-descubren automáticamente. El listener se registrará sin configuración adicional.
+> **Nota**: El listener **no** se auto-descubre. Debes registrarlo manualmente en tu `EventServiceProvider` o usar el atributo `#[AsListener]` (Laravel 11+).
 
 ---
 
@@ -253,6 +253,11 @@ SAML2_SP_ENTITY_ID=https://tu-app.com
 # Opcional pero recomendado
 SAML2_LOGIN_REDIRECT=/dashboard
 SAML2_LOGOUT_REDIRECT=/
+
+# Seguridad (defaults de v0.3.0 — sobreescribir solo si es necesario)
+# SAML2_WANT_MESSAGES_SIGNED=true
+# SAML2_WANT_ASSERTIONS_SIGNED=true
+# SAML2_BLOCK_PRIVATE_URLS=true
 ```
 
 ---
@@ -291,6 +296,8 @@ https://tu-app.com/saml2/setup
 ```
 
 Deberías ver el wizard de configuración inicial.
+
+> **Nota**: Desde v0.3.0, el wizard de setup requiere autenticación. Debes estar logueado para acceder a `/saml2/setup`.
 
 ---
 

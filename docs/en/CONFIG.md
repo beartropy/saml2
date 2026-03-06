@@ -109,7 +109,7 @@ SAML2_IDP_CERT="MIICpDCCAYwCCQ..."
 
 ```php
 'route_prefix' => env('SAML2_ROUTE_PREFIX', 'saml2'),
-'route_middleware' => ['web'],
+'route_middleware' => ['web', 'throttle:60,1'],
 ```
 
 ### Options
@@ -117,7 +117,7 @@ SAML2_IDP_CERT="MIICpDCCAYwCCQ..."
 | Option | Environment Variable | Description | Default |
 |--------|----------------------|-------------|---------|
 | `route_prefix` | `SAML2_ROUTE_PREFIX` | Prefix for all SAML2 routes | `saml2` |
-| `route_middleware` | - | Middleware applied to SAML2 routes | `['web']` |
+| `route_middleware` | - | Middleware applied to SAML2 routes | `['web', 'throttle:60,1']` |
 
 ### Resulting Routes
 
@@ -133,6 +133,20 @@ With the default `saml2` prefix:
 | `/saml2/metadata` | GET | SP Metadata XML |
 | `/saml2/logout/{idp?}` | GET | Initiate logout |
 
+### Setup Route Middleware
+
+The setup wizard has its own middleware stack:
+
+```php
+'setup_middleware' => ['web', 'auth', 'throttle:10,1'],
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `setup_middleware` | Middleware applied to setup wizard routes | `['web', 'auth', 'throttle:10,1']` |
+
+> **Note**: Since v0.3.0, the setup wizard requires authentication by default. Customize this if you need unauthenticated setup access.
+
 ---
 
 ## Admin Panel
@@ -141,7 +155,7 @@ With the default `saml2` prefix:
 'admin_enabled' => env('SAML2_ADMIN_ENABLED', true),
 'admin_route_prefix' => env('SAML2_ADMIN_PREFIX', 'saml2/admin'),
 'admin_middleware' => ['web', 'auth'],
-'layout' => env('SAML2_ADMIN_LAYOUT', 'beartropy-saml2::admin.partials.layout'),
+'layout' => env('SAML2_ADMIN_LAYOUT'),
 ```
 
 ### Admin Panel Options
@@ -151,7 +165,7 @@ With the default `saml2` prefix:
 | `admin_enabled` | `SAML2_ADMIN_ENABLED` | Enable/disable the admin panel | `true` |
 | `admin_route_prefix` | `SAML2_ADMIN_PREFIX` | Prefix for administration routes | `saml2/admin` |
 | `admin_middleware` | - | Middleware to protect admin routes | `['web', 'auth']` |
-| `layout` | `SAML2_ADMIN_LAYOUT` | Blade layout used for the panel | Internal package layout |
+| `layout` | `SAML2_ADMIN_LAYOUT` | Blade layout used for the panel | `null` (uses internal package layout) |
 
 ### Protecting the Admin Panel
 
@@ -185,10 +199,20 @@ To integrate the admin panel with your application's layout:
 'layout' => 'layouts.admin', // Your custom layout
 ```
 
-Your layout must include:
-- `@yield('title')` for the page title
-- `@yield('content')` for the main content
-- `@yield('scripts')` for additional scripts
+Your layout component must accept a `$slot` for content:
+
+```blade
+{{-- resources/views/components/layouts/admin.blade.php --}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin</title>
+</head>
+<body>
+    {{ $slot }}
+</body>
+</html>
+```
 
 ---
 
@@ -229,6 +253,18 @@ Specifies your application's user model class. Used internally for authenticatio
 | `allow_metadata_import` | `SAML2_ALLOW_METADATA_IMPORT` | Allow importing IDP metadata from URLs | `true` |
 
 > **Security Note**: In high-security environments, consider disabling this option and configuring IDPs manually.
+
+### SSRF Protection
+
+```php
+'block_private_metadata_urls' => env('SAML2_BLOCK_PRIVATE_URLS', true),
+```
+
+| Option | Environment Variable | Description | Default |
+|--------|----------------------|-------------|---------|
+| `block_private_metadata_urls` | `SAML2_BLOCK_PRIVATE_URLS` | Block metadata URLs pointing to private/reserved IPs | `true` |
+
+> **Security**: When enabled, server-side metadata fetching rejects URLs pointing to private networks (10.x, 172.16.x, 192.168.x, 169.254.x, localhost). Set to `false` only if your IDP metadata is hosted on an internal network.
 
 ---
 
@@ -297,8 +333,8 @@ Advanced settings for secure SAML communication.
     'logoutRequestSigned' => false,
     'logoutResponseSigned' => false,
     'signMetadata' => false,
-    'wantMessagesSigned' => false,
-    'wantAssertionsSigned' => false,
+    'wantMessagesSigned' => env('SAML2_WANT_MESSAGES_SIGNED', true),
+    'wantAssertionsSigned' => env('SAML2_WANT_ASSERTIONS_SIGNED', true),
     'wantAssertionsEncrypted' => false,
     'wantNameIdEncrypted' => false,
     'requestedAuthnContext' => true,
@@ -316,27 +352,13 @@ Advanced settings for secure SAML communication.
 | `logoutRequestSigned` | Sign logout requests | `true` |
 | `logoutResponseSigned` | Sign logout responses | `true` |
 | `signMetadata` | Sign SP metadata XML | `true` |
-| `wantMessagesSigned` | Require signed messages from IDP | `true` |
-| `wantAssertionsSigned` | Require signed assertions | `true` |
+| `wantMessagesSigned` | Require signed messages from IDP | `true` (default since v0.3.0) |
+| `wantAssertionsSigned` | Require signed assertions | `true` (default since v0.3.0) |
 | `wantAssertionsEncrypted` | Require encrypted assertions | `false` (IDP dependent) |
 | `wantNameIdEncrypted` | Require encrypted NameID | `false` |
 | `requestedAuthnContext` | Request authentication context | `true` |
 | `signatureAlgorithm` | Signature algorithm | RSA-SHA256 |
 | `digestAlgorithm` | Digest algorithm | SHA256 |
-
-### Recommended Production Configuration
-
-```php
-'security' => [
-    'authnRequestsSigned' => true,
-    'logoutRequestSigned' => true,
-    'logoutResponseSigned' => true,
-    'signMetadata' => true,
-    'wantMessagesSigned' => true,
-    'wantAssertionsSigned' => true,
-    // ... rest as default values
-],
-```
 
 > **Important**: To use signatures, you must first generate SP certificates with:
 > ```bash
@@ -386,6 +408,11 @@ SAML2_STRICT=true
 
 # Metadata Import
 SAML2_ALLOW_METADATA_IMPORT=true
+
+# Security (new in v0.3.0)
+SAML2_WANT_MESSAGES_SIGNED=true
+SAML2_WANT_ASSERTIONS_SIGNED=true
+SAML2_BLOCK_PRIVATE_URLS=true
 ```
 
 ---

@@ -102,16 +102,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | User Model
-    |--------------------------------------------------------------------------
-    |
-    | The user model class to use for authentication lookups.
-    |
-    */
-    'user_model' => \App\Models\User::class,
-
-    /*
-    |--------------------------------------------------------------------------
     | Metadata Import
     |--------------------------------------------------------------------------
     |
@@ -123,6 +113,29 @@ return [
     // Block metadata URLs pointing to private/reserved IPs (SSRF protection).
     // Set to false if your IDP is on an internal network.
     'block_private_metadata_urls' => env('SAML2_BLOCK_PRIVATE_URLS', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Caching
+    |--------------------------------------------------------------------------
+    |
+    | Cache IDP lookups and SP metadata to reduce database queries.
+    | Set to 0 to disable caching.
+    |
+    */
+    'cache_idp_ttl' => env('SAML2_CACHE_IDP_TTL', 300), // seconds (5 min)
+    'cache_metadata_ttl' => env('SAML2_CACHE_METADATA_TTL', 3600), // seconds (1 hour)
+
+    /*
+    |--------------------------------------------------------------------------
+    | Session Keys Prefix
+    |--------------------------------------------------------------------------
+    |
+    | Prefix for session keys used to store SAML session data.
+    | Change if you have conflicts with other packages.
+    |
+    */
+    'session_prefix' => env('SAML2_SESSION_PREFIX', 'saml2'),
 
     /*
     |--------------------------------------------------------------------------

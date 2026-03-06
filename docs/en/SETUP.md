@@ -15,13 +15,15 @@ Initial setup consists of:
 
 ## Option A: Setup Wizard (Recommended)
 
-The Setup Wizard is the easiest way to configure SAML2. It's available only **before configuring the first IDP**.
+The Setup Wizard is the easiest way to configure SAML2. It's available only **before configuring the first IDP**. Since v0.3.0, the setup wizard **requires authentication** — you must be logged in to access it.
 
 ### Accessing the Wizard
 
 ```
 https://your-app.com/saml2/setup
 ```
+
+> **Important**: You must be authenticated to access the setup wizard. The default middleware is `['web', 'auth', 'throttle:10,1']`. Customize via the `setup_middleware` config option.
 
 ### Step 1: Review SP Metadata
 
@@ -230,6 +232,34 @@ class HandleSaml2Login
 }
 ```
 
+### Registering the Listener
+
+The listener must be registered manually. Choose one of these methods:
+
+**Option 1: EventServiceProvider (Laravel 10/11)**
+
+```php
+// app/Providers/EventServiceProvider.php
+protected $listen = [
+    \Beartropy\Saml2\Events\Saml2LoginEvent::class => [
+        \App\Listeners\HandleSaml2Login::class,
+    ],
+];
+```
+
+**Option 2: `#[AsListener]` attribute (Laravel 11+)**
+
+```php
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
+use Illuminate\Events\Attributes\AsListener;
+
+#[AsListener(Saml2LoginEvent::class)]
+class HandleSaml2Login
+{
+    // ...
+}
+```
+
 ### Customizing the Listener
 
 You can extend the listener to:
@@ -411,6 +441,8 @@ After this, the wizard will be available again at `/saml2/setup`.
 - [ ] SP certificates generated (production)
 - [ ] Admin middleware configured (optional)
 - [ ] Attribute mapping configured (if needed)
+- [ ] Setup wizard accessed while authenticated (required since v0.3.0)
+- [ ] Listener registered in EventServiceProvider or with `#[AsListener]`
 - [ ] Tested complete login flow
 
 ---

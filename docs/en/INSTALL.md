@@ -4,8 +4,8 @@ This guide covers the complete installation process for the `beartropy/saml2` pa
 
 ## Prerequisites
 
-- **PHP** 8.1 or higher
-- **Laravel** 10.x, 11.x, or 12.x
+- **PHP** 8.2 or higher
+- **Laravel** 11.x or 12.x
 - PHP **openssl** extension
 - PHP **dom** extension
 
@@ -57,12 +57,12 @@ php artisan migrate
 | `id` | bigint | Autoincremental ID |
 | `key` | string | Unique IDP identifier (slug) |
 | `name` | string | Human-readable IDP name |
-| `entity_id` | string | IDP Entity ID |
-| `sso_url` | string | Single Sign-On URL |
-| `slo_url` | string (nullable) | Single Logout URL |
+| `entity_id` | text | IDP Entity ID |
+| `sso_url` | text | Single Sign-On URL |
+| `slo_url` | text (nullable) | Single Logout URL |
 | `x509_cert` | text | IDP x509 certificate |
 | `x509_cert_multi` | json (nullable) | Multiple certificates |
-| `metadata_url` | string (nullable) | Metadata URL for refreshing |
+| `metadata_url` | text (nullable) | Metadata URL for refreshing |
 | `metadata` | json (nullable) | Additional configuration data |
 | `attribute_mapping` | json (nullable) | Custom attribute mapping |
 | `is_active` | boolean | IDP active/inactive status |
@@ -183,7 +183,7 @@ class HandleSaml2Login
 }
 ```
 
-> **Note**: In Laravel 11/12, events are auto-discovered. The listener will be registered without additional configuration.
+> **Note**: The listener is **not** auto-discovered. You must register it manually in your `EventServiceProvider` or use the `#[AsListener]` attribute (Laravel 11+).
 
 ---
 
@@ -253,6 +253,11 @@ SAML2_SP_ENTITY_ID=https://your-app.com
 # Optional but recommended
 SAML2_LOGIN_REDIRECT=/dashboard
 SAML2_LOGOUT_REDIRECT=/
+
+# Security (v0.3.0 defaults — override only if needed)
+# SAML2_WANT_MESSAGES_SIGNED=true
+# SAML2_WANT_ASSERTIONS_SIGNED=true
+# SAML2_BLOCK_PRIVATE_URLS=true
 ```
 
 ---
@@ -291,6 +296,8 @@ https://your-app.com/saml2/setup
 ```
 
 You should see the initial configuration wizard.
+
+> **Note**: Since v0.3.0, the setup wizard requires authentication. You must be logged in to access `/saml2/setup`.
 
 ---
 

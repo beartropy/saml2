@@ -11,6 +11,7 @@ Welcome to the detailed documentation for the `beartropy/saml2` package for Lara
 | [INSTALL.md](INSTALL.md) | Installation, migrations, asset publishing |
 | [SETUP.md](SETUP.md) | Initial setup (first deploy) and login listener |
 | [UI.md](UI.md) | Web administration panel |
+| [CHANGELOG](../../CHANGELOG.md) | Release notes, upgrade guides, breaking changes |
 
 ---
 

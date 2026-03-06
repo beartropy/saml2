@@ -55,7 +55,7 @@ The **First-Deploy Setup Wizard** will guide you through:
    - **Paste XML** - Copy/paste metadata from your IDP
    - **Manual Entry** - Enter Entity ID, SSO URL, Certificate manually
 
-> **Note**: The setup wizard is only accessible before the first IDP is configured. After that, use the Admin Panel.
+> **Note**: The setup wizard requires authentication (since v0.3.0) and is only accessible before the first IDP is configured. After that, use the Admin Panel.
 
 ### Option B: Using Artisan Commands
 
@@ -165,7 +165,7 @@ public function handle(Saml2LoginEvent $event): void
 }
 ```
 
-> **Note**: In Laravel 11/12, events are auto-discovered.
+> **Note**: The listener must be registered manually in your `EventServiceProvider` or with the `#[AsListener]` attribute (Laravel 11+). See the [Setup Guide](docs/en/SETUP.md) for details.
 
 ---
 
@@ -401,17 +401,30 @@ Dispatched after successful SAML logout.
 
 ## Security
 
-For production environments, enable signature and encryption:
+Since v0.3.0, the package ships with secure defaults:
+
+- `wantAssertionsSigned` and `wantMessagesSigned` default to `true`
+- Setup wizard requires authentication (`setup_middleware`)
+- SAML routes include rate limiting (`throttle:60,1`)
+- SSRF protection on metadata fetching (`block_private_metadata_urls`)
+- Session regeneration after login (prevents session fixation)
+- Open redirect protection on `returnTo` parameters
+
+For signing outgoing requests (recommended), generate SP certificates:
+
+```bash
+php artisan saml2:generate-cert
+```
+
+Then enable request signing in your config:
 
 ```php
 'security' => [
     'authnRequestsSigned' => true,
-    'wantAssertionsSigned' => true,
+    'logoutRequestSigned' => true,
     'signMetadata' => true,
 ],
 ```
-
-Generate SP certificates first with `php artisan saml2:generate-cert`.
 
 ---
 

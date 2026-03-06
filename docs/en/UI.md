@@ -112,7 +112,7 @@ To modify an existing IDP:
 2. Modify the necessary fields.
 3. Click **"Save Changes"**.
 
-> **Note**: The **Key** field cannot be modified after creation, as it's used as an identifier in routes and code.
+> **Note**: The **Key** field cannot be modified after creation. This is enforced server-side to prevent route/code breakage.
 
 ---
 
@@ -200,6 +200,8 @@ If an IDP has a `metadata_url` configured, you can update its configuration auto
 
 > **Caution**: This process will overwrite any manual changes made to these fields.
 
+> **Security**: Since v0.3.0, server-side metadata fetching includes SSRF protection. URLs pointing to private/reserved IP ranges (10.x, 172.16.x, 192.168.x, 169.254.x, localhost) are blocked by default. If your IDP is on an internal network, set `SAML2_BLOCK_PRIVATE_URLS=false` in your `.env`.
+
 ---
 
 ## Delete IDP
@@ -225,32 +227,17 @@ To integrate the panel with your application's layout:
 'layout' => 'layouts.admin',
 ```
 
-Your layout must include:
+Your layout must be a Blade component that accepts a `$slot`:
 
 ```blade
-{{-- resources/views/layouts/admin.blade.php --}}
+{{-- resources/views/components/layouts/admin.blade.php --}}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>@yield('title')</title>
-    {{-- Your styles --}}
+    <title>Admin</title>
 </head>
 <body>
-    {{-- Your header/sidebar --}}
-    
-    <main>
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        
-        @if(session('error'))
-            <div class="alert alert-error">{{ session('error') }}</div>
-        @endif
-        
-        @yield('content')
-    </main>
-    
-    @yield('scripts')
+    {{ $slot }}
 </body>
 </html>
 ```

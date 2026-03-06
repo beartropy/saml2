@@ -109,7 +109,7 @@ SAML2_IDP_CERT="MIICpDCCAYwCCQ..."
 
 ```php
 'route_prefix' => env('SAML2_ROUTE_PREFIX', 'saml2'),
-'route_middleware' => ['web'],
+'route_middleware' => ['web', 'throttle:60,1'],
 ```
 
 ### Opciones
@@ -117,7 +117,7 @@ SAML2_IDP_CERT="MIICpDCCAYwCCQ..."
 | Opción | Variable de Entorno | Descripción | Por Defecto |
 |--------|---------------------|-------------|-------------|
 | `route_prefix` | `SAML2_ROUTE_PREFIX` | Prefijo para todas las rutas SAML2 | `saml2` |
-| `route_middleware` | - | Middleware aplicado a las rutas SAML2 | `['web']` |
+| `route_middleware` | - | Middleware aplicado a las rutas SAML2 | `['web', 'throttle:60,1']` |
 
 ### Rutas Resultantes
 
@@ -133,6 +133,20 @@ Con el prefijo por defecto `saml2`:
 | `/saml2/metadata` | GET | Metadata XML del SP |
 | `/saml2/logout/{idp?}` | GET | Iniciar logout |
 
+### Middleware de Rutas de Setup
+
+El wizard de setup tiene su propio stack de middleware:
+
+```php
+'setup_middleware' => ['web', 'auth', 'throttle:10,1'],
+```
+
+| Opción | Descripción | Por Defecto |
+|--------|-------------|-------------|
+| `setup_middleware` | Middleware aplicado a las rutas del wizard de setup | `['web', 'auth', 'throttle:10,1']` |
+
+> **Nota**: Desde v0.3.0, el wizard de setup requiere autenticación por defecto. Personaliza esta opción si necesitas acceso sin autenticación.
+
 ---
 
 ## Panel de Administración
@@ -141,7 +155,7 @@ Con el prefijo por defecto `saml2`:
 'admin_enabled' => env('SAML2_ADMIN_ENABLED', true),
 'admin_route_prefix' => env('SAML2_ADMIN_PREFIX', 'saml2/admin'),
 'admin_middleware' => ['web', 'auth'],
-'layout' => env('SAML2_ADMIN_LAYOUT', 'beartropy-saml2::admin.partials.layout'),
+'layout' => env('SAML2_ADMIN_LAYOUT'),
 ```
 
 ### Opciones del Panel Admin
@@ -151,7 +165,7 @@ Con el prefijo por defecto `saml2`:
 | `admin_enabled` | `SAML2_ADMIN_ENABLED` | Habilitar/deshabilitar el panel de admin | `true` |
 | `admin_route_prefix` | `SAML2_ADMIN_PREFIX` | Prefijo para rutas de administración | `saml2/admin` |
 | `admin_middleware` | - | Middleware para proteger rutas admin | `['web', 'auth']` |
-| `layout` | `SAML2_ADMIN_LAYOUT` | Layout blade usado para el panel | Layout interno del paquete |
+| `layout` | `SAML2_ADMIN_LAYOUT` | Layout blade usado para el panel | null (usa layout interno del paquete) |
 
 ### Proteger el Panel de Administración
 
@@ -185,10 +199,20 @@ Para integrar el panel admin con el layout de tu aplicación:
 'layout' => 'layouts.admin', // Tu layout personalizado
 ```
 
-Tu layout debe incluir:
-- `@yield('title')` para el título de la página
-- `@yield('content')` para el contenido principal
-- `@yield('scripts')` para scripts adicionales
+Tu layout debe ser un componente Blade que acepte un `$slot`:
+
+```blade
+{{-- resources/views/components/layouts/admin.blade.php --}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin</title>
+</head>
+<body>
+    {{ $slot }}
+</body>
+</html>
+```
 
 ---
 
@@ -229,6 +253,18 @@ Especifica el modelo de usuario de tu aplicación. Usado internamente para looku
 | `allow_metadata_import` | `SAML2_ALLOW_METADATA_IMPORT` | Permitir importar metadata de IDPs desde URLs | `true` |
 
 > **Nota de Seguridad**: En ambientes de alta seguridad, considera deshabilitar esta opción y configurar los IDPs manualmente.
+
+### Protección SSRF
+
+```php
+'block_private_metadata_urls' => env('SAML2_BLOCK_PRIVATE_URLS', true),
+```
+
+| Opción | Variable de Entorno | Descripción | Por Defecto |
+|--------|---------------------|-------------|-------------|
+| `block_private_metadata_urls` | `SAML2_BLOCK_PRIVATE_URLS` | Bloquear URLs de metadata que apunten a IPs privadas/reservadas | `true` |
+
+> **Seguridad**: Cuando está habilitado, la obtención de metadata del servidor rechaza URLs que apuntan a redes privadas (10.x, 172.16.x, 192.168.x, 169.254.x, localhost). Establece en `false` solo si el metadata de tu IDP está en una red interna.
 
 ---
 
@@ -297,8 +333,8 @@ Configuración avanzada para comunicación SAML segura.
     'logoutRequestSigned' => false,
     'logoutResponseSigned' => false,
     'signMetadata' => false,
-    'wantMessagesSigned' => false,
-    'wantAssertionsSigned' => false,
+    'wantMessagesSigned' => env('SAML2_WANT_MESSAGES_SIGNED', true),
+    'wantAssertionsSigned' => env('SAML2_WANT_ASSERTIONS_SIGNED', true),
     'wantAssertionsEncrypted' => false,
     'wantNameIdEncrypted' => false,
     'requestedAuthnContext' => true,
@@ -323,20 +359,6 @@ Configuración avanzada para comunicación SAML segura.
 | `requestedAuthnContext` | Solicitar contexto de autenticación | `true` |
 | `signatureAlgorithm` | Algoritmo de firma | RSA-SHA256 |
 | `digestAlgorithm` | Algoritmo de digest | SHA256 |
-
-### Configuración Recomendada para Producción
-
-```php
-'security' => [
-    'authnRequestsSigned' => true,
-    'logoutRequestSigned' => true,
-    'logoutResponseSigned' => true,
-    'signMetadata' => true,
-    'wantMessagesSigned' => true,
-    'wantAssertionsSigned' => true,
-    // ... resto como valores por defecto
-],
-```
 
 > **Importante**: Para usar firmas, primero debes generar certificados SP con:
 > ```bash
@@ -386,6 +408,11 @@ SAML2_STRICT=true
 
 # Importación de metadata
 SAML2_ALLOW_METADATA_IMPORT=true
+
+# Seguridad (nuevo en v0.3.0)
+SAML2_WANT_MESSAGES_SIGNED=true
+SAML2_WANT_ASSERTIONS_SIGNED=true
+SAML2_BLOCK_PRIVATE_URLS=true
 ```
 
 ---
