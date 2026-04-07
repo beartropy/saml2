@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.2] - 2026-04-07
+
+### Changed
+- Added Laravel 13 support (`illuminate/support: ^13.0`, `illuminate/database: ^13.0`, `illuminate/routing: ^13.0`)
+
 ## [v0.3.1] - 2026-03-05
 
 ### Added
