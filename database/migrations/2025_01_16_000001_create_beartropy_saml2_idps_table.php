@@ -15,12 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('key')->unique()->comment('Unique slug identifier for the IDP');
             $table->string('name')->comment('Human-readable name');
-            $table->string('entity_id')->comment('IDP Entity ID');
-            $table->string('sso_url')->comment('Single Sign-On URL');
-            $table->string('slo_url')->nullable()->comment('Single Logout URL');
+            $table->text('entity_id')->comment('IDP Entity ID');
+            $table->text('sso_url')->comment('Single Sign-On URL');
+            $table->text('slo_url')->nullable()->comment('Single Logout URL');
             $table->text('x509_cert')->comment('IDP x509 certificate');
             $table->json('x509_cert_multi')->nullable()->comment('Multiple certificates for signing/encryption');
-            $table->string('metadata_url')->nullable()->comment('URL to fetch/refresh IDP metadata');
+            $table->text('metadata_url')->nullable()->comment('URL to fetch/refresh IDP metadata');
             $table->json('metadata')->nullable()->comment('Additional configuration data');
             $table->json('attribute_mapping')->nullable()->comment('Custom SAML attribute mapping for this IDP');
             $table->boolean('is_active')->default(true)->comment('Whether this IDP is active');
