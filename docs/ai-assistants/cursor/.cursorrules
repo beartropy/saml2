@@ -1,0 +1,49 @@
+# Beartropy SAML2 - Cursor Rules
+
+## Project Context
+This project uses **Beartropy SAML2**, a multi-IDP SAML2 Service Provider package for Laravel.
+
+## Facade Usage
+
+```php
+use Beartropy\Saml2\Facades\Saml2;
+
+# Login redirect
+return redirect(Saml2::login('azure'));
+
+# Process ACS (in controller/listener)
+$result = Saml2::processAcsResponse($idpKey);
+
+# SP metadata
+$xml = Saml2::getMetadataXml();
+```
+
+## Event Listener Pattern
+
+```php
+use Beartropy\Saml2\Events\Saml2LoginEvent;
+
+class HandleSaml2Login
+{
+    public function handle(Saml2LoginEvent $event): void
+    {
+        $user = User::firstOrCreate(
+            ['email' => $event->getEmail()],
+            ['name' => $event->getName()]
+        );
+        Auth::login($user);
+    }
+}
+```
+
+## Key Configuration
+- `SAML2_SP_ENTITY_ID` — Your app URL
+- `SAML2_IDP_SOURCE` — 'env', 'database', or 'both'
+- `SAML2_LOGIN_REDIRECT` — Post-login redirect
+
+## Best Practices
+- Exclude `/saml2/acs*` routes from CSRF protection
+- Use `database` IDP source for multi-IDP setups
+- Always handle `Saml2LoginEvent` — the package dispatches it but doesn't authenticate
+- Use `$event->getEmail()` / `$event->getName()` instead of raw attributes
+- Run `php artisan saml2:publish-listener` to scaffold the listener

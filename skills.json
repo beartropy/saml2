@@ -1,0 +1,5 @@
+{
+    "prefix": "bt-saml2",
+    "excludeSkills": [],
+    "componentDocs": "docs/llms"
+}

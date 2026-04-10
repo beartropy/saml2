@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.4] - 2026-04-10
+
+### Added
+- **Docs**: AI assistant documentation (`docs/components/`, `docs/llms/`, `docs/ai-assistants/`) with API reference, usage examples, AI reference, cursor rules, and code examples for facade, IDP resolver, metadata parser, events, configuration, and artisan commands.
+- **Skills**: Claude Code skills (`bt-saml2-setup`, `bt-saml2-component`) and `skills.json` manifest for the `beartropy:skills` installer command.
+
 ## [v0.3.2] - 2026-04-07
 
 ### Changed
