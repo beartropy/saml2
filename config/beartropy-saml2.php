@@ -186,7 +186,13 @@ return [
     |
     | Enable debug mode for development. Should be false in production.
     |
+    | When enabled, the package writes detailed debug logs of the SAML flow
+    | (login, ACS, received/mapped attributes, logout) through Laravel's
+    | logger. Use "log_channel" to send them to a dedicated channel; null
+    | uses the application's default logging channel.
+    |
     */
     'debug' => env('SAML2_DEBUG', false),
+    'log_channel' => env('SAML2_LOG_CHANNEL', null),
     'strict' => env('SAML2_STRICT', true),
 ];

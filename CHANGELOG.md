@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.5] - 2026-06-04
+
+### Added
+- **Debug logging** — when `SAML2_DEBUG` (config `debug`) is enabled, the package now writes detailed debug logs of the SAML flow (login, ACS, received/mapped attributes, logout) through Laravel's logger. Previously the `debug` flag only fed the underlying `onelogin/php-saml` library and produced no application logs.
+- **`SAML2_LOG_CHANNEL` config** (`log_channel`) — optional dedicated log channel for the debug output; defaults to the application's default logging channel.
+
 ## [v0.3.4] - 2026-04-10
 
 ### Added

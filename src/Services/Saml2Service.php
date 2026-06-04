@@ -9,6 +9,7 @@ use Beartropy\Saml2\Exceptions\Saml2Exception;
 use Beartropy\Saml2\Models\Saml2Idp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use OneLogin\Saml2\Auth;
 use OneLogin\Saml2\Settings;
 
@@ -18,6 +19,24 @@ class Saml2Service
         protected IdpResolver $idpResolver,
         protected MetadataParser $metadataParser
     ) {}
+
+    /**
+     * Write a debug log entry for the SAML flow when debug mode is enabled.
+     *
+     * Gated by the "beartropy-saml2.debug" config flag. Optionally routed to
+     * a dedicated channel via "beartropy-saml2.log_channel".
+     */
+    protected function debug(string $message, array $context = []): void
+    {
+        if (!config('beartropy-saml2.debug', false)) {
+            return;
+        }
+
+        $channel = config('beartropy-saml2.log_channel');
+        $logger = $channel ? Log::channel($channel) : Log::getFacadeRoot();
+
+        $logger->debug('[beartropy-saml2] ' . $message, $context);
+    }
 
     /**
      * Build onelogin/php-saml settings array for an IDP.
@@ -89,10 +108,18 @@ class Saml2Service
     public function login(string $idpKey, ?string $returnTo = null): string
     {
         $auth = $this->getAuth($idpKey);
-        
+
         $returnTo = $returnTo ?? config('beartropy-saml2.login_redirect', '/');
-        
-        return $auth->login($returnTo, [], false, false, true);
+
+        $url = $auth->login($returnTo, [], false, false, true);
+
+        $this->debug('Initiating SSO login', [
+            'idp' => $idpKey,
+            'return_to' => $returnTo,
+            'redirect_url' => $url,
+        ]);
+
+        return $url;
     }
 
     /**
@@ -147,28 +174,44 @@ class Saml2Service
     protected function processAcsWithIdp(Saml2Idp $idp): array
     {
         $auth = $this->getAuth($idp);
-        
+
+        $this->debug('Processing ACS response', ['idp' => $idp->key]);
+
         $auth->processResponse();
-        
+
         $errors = $auth->getErrors();
         if (!empty($errors)) {
             $errorReason = $auth->getLastErrorReason();
+            $this->debug('ACS response has errors', [
+                'idp' => $idp->key,
+                'errors' => $errors,
+                'reason' => $errorReason,
+            ]);
             throw new Saml2Exception(
-                'SAML Response Error: ' . implode(', ', $errors) . 
+                'SAML Response Error: ' . implode(', ', $errors) .
                 ($errorReason ? " - $errorReason" : '')
             );
         }
 
         if (!$auth->isAuthenticated()) {
+            $this->debug('ACS response: user not authenticated', ['idp' => $idp->key]);
             throw new Saml2Exception('SAML Response: User is not authenticated');
         }
 
         $nameId = $auth->getNameId();
         $attributes = $auth->getAttributes();
         $sessionIndex = $auth->getSessionIndex();
-        
+
         // Use IDP-specific mapping with fallback to global config
         $mappedAttributes = $this->mapAttributes($attributes, $idp);
+
+        $this->debug('ACS response authenticated', [
+            'idp' => $idp->key,
+            'name_id' => $nameId,
+            'session_index' => $sessionIndex,
+            'raw_attributes' => $attributes,
+            'mapped_attributes' => $mappedAttributes,
+        ]);
 
         // Dispatch event for the user to handle authentication
         event(new Saml2LoginEvent(
@@ -220,10 +263,20 @@ class Saml2Service
     public function logout(string $idpKey, ?string $returnTo = null, ?string $nameId = null, ?string $sessionIndex = null): string
     {
         $auth = $this->getAuth($idpKey);
-        
+
         $returnTo = $returnTo ?? config('beartropy-saml2.logout_redirect', '/');
-        
-        return $auth->logout($returnTo, [], $nameId, $sessionIndex, true);
+
+        $url = $auth->logout($returnTo, [], $nameId, $sessionIndex, true);
+
+        $this->debug('Initiating SLO logout', [
+            'idp' => $idpKey,
+            'name_id' => $nameId,
+            'session_index' => $sessionIndex,
+            'return_to' => $returnTo,
+            'redirect_url' => $url,
+        ]);
+
+        return $url;
     }
 
     /**
@@ -236,6 +289,12 @@ class Saml2Service
     {
         $auth = $this->getAuth($idpKey);
 
+        $this->debug('Processing SLO', [
+            'idp' => $idpKey,
+            'name_id' => $nameId,
+            'session_index' => $sessionIndex,
+        ]);
+
         $redirectUrl = $auth->processSLO(
             keepLocalSession: false,
             requestId: null,
@@ -245,6 +304,7 @@ class Saml2Service
 
         $errors = $auth->getErrors();
         if (!empty($errors)) {
+            $this->debug('SLO has errors', ['idp' => $idpKey, 'errors' => $errors]);
             throw new Saml2Exception('SAML SLO Error: ' . implode(', ', $errors));
         }
 
