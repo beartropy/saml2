@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.7] - 2026-06-25
+
+### Fixed
+- **Laravel 13 CSRF exclusion on ACS/SLS** — the SAML endpoints now also exclude `PreventRequestForgery`, Laravel 13's renamed CSRF middleware. `withoutMiddleware` matches by exact class (not ancestry), and L13 registers the parent `PreventRequestForgery` in the `web` group (the L11/L12 `ValidateCsrfToken` and legacy `VerifyCsrfToken` now extend it). As a result the cross-site, token-less SAML POSTs from the IdP were rejected with a CSRF error under Laravel 13. The route test was hardened to assert the *resolved* middleware stack contains no CSRF guard, instead of only checking the declared exclusion list (which missed this regression).
+
 ## [v0.3.6] - 2026-06-25
 
 ### Changed

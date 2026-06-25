@@ -42,14 +42,27 @@ test('SAML routes have rate limiting middleware', function () {
 });
 
 test('ACS routes exclude CSRF verification', function () {
-    $acsRoute = app('router')->getRoutes()->getByName('saml2.acs');
-    $excluded = $acsRoute->excludedMiddleware();
+    $router = app('router');
 
-    // Should exclude at least one CSRF middleware class
-    expect(
-        in_array(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class, $excluded) ||
-        in_array(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, $excluded)
-    )->toBeTrue();
+    // The CSRF guard's class name differs by Laravel version: Laravel 13 registers
+    // the parent PreventRequestForgery, while L11/L12 register ValidateCsrfToken
+    // (which now extends it). withoutMiddleware matches by exact class, not by
+    // ancestry, so the resolved stack must be checked against every variant —
+    // asserting only the declared exclusion list would miss the L13 regression.
+    $csrfClasses = [
+        \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+        \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+    ];
+
+    foreach (['saml2.acs.auto', 'saml2.acs', 'saml2.sls'] as $name) {
+        $route = $router->getRoutes()->getByName($name);
+        $gathered = $router->gatherRouteMiddleware($route);
+
+        foreach ($csrfClasses as $csrf) {
+            expect($gathered)->not->toContain($csrf);
+        }
+    }
 });
 
 test('logout route accepts optional IDP parameter', function () {

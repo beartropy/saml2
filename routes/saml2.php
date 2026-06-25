@@ -32,24 +32,42 @@ Route::group([
     Route::post('acs', [Saml2Controller::class, 'acsAuto'])
         ->name('saml2.acs.auto')
         ->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            // CSRF middleware class name differs across Laravel versions. The IdP
+            // POSTs here cross-site with no token, so all variants must be excluded:
+            // Laravel 13 registers the parent PreventRequestForgery (the L11/L12
+            // ValidateCsrfToken and legacy VerifyCsrfToken now extend it), and
+            // withoutMiddleware matches by exact class, not by ancestry.
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
             \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
         ]);
     
     // ACS - Specific IDP (legacy, for backwards compatibility)
     Route::post('acs/{idp}', [Saml2Controller::class, 'acs'])
         ->name('saml2.acs')
         ->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            // CSRF middleware class name differs across Laravel versions. The IdP
+            // POSTs here cross-site with no token, so all variants must be excluded:
+            // Laravel 13 registers the parent PreventRequestForgery (the L11/L12
+            // ValidateCsrfToken and legacy VerifyCsrfToken now extend it), and
+            // withoutMiddleware matches by exact class, not by ancestry.
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
             \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
         ]);
     
     // SLS - Single Logout Service
     Route::match(['get', 'post'], 'sls/{idp}', [Saml2Controller::class, 'sls'])
         ->name('saml2.sls')
         ->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            // CSRF middleware class name differs across Laravel versions. The IdP
+            // POSTs here cross-site with no token, so all variants must be excluded:
+            // Laravel 13 registers the parent PreventRequestForgery (the L11/L12
+            // ValidateCsrfToken and legacy VerifyCsrfToken now extend it), and
+            // withoutMiddleware matches by exact class, not by ancestry.
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
             \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
         ]);
     
     // SP Metadata
