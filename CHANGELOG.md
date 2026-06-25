@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.6] - 2026-06-25
+
+### Changed
+- **Dev**: Test against Laravel 13 via Orchestra Testbench 11 (`orchestra/testbench: ^9.0|^10.0|^11.0`). No runtime changes.
+
 ## [v0.3.5] - 2026-06-04
 
 ### Added
