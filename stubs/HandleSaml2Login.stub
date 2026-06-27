@@ -19,8 +19,10 @@ class HandleSaml2Login
         // Obtener toda la data disponible
         // $data = $event->toArray();
 
-        // Obtener atributos SAML originales
-        // $roles = $event->getRawAttribute('http://schemas.xmlsoap.org/claims/Group');
+        // Obtener TODOS los roles (un usuario puede tener 2 o más).
+        // getAttributeAll() siempre devuelve un array, incluso con un solo rol.
+        // Para leer el claim crudo del IdP usá getRawAttributeAll('...').
+        // $roles = $event->getAttributeAll('roles');
 
         // Buscar o crear usuario
         $user = User::firstOrCreate(
@@ -32,7 +34,8 @@ class HandleSaml2Login
         // $user->update(['name' => $name]);
 
         // Opcional: asignar roles (si usas spatie/laravel-permission)
-        // if ($roles) {
+        // syncRoles() acepta el array completo y asigna todos los roles.
+        // if (! empty($roles)) {
         //     $user->syncRoles($roles);
         // }
 

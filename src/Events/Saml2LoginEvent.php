@@ -41,13 +41,57 @@ class Saml2LoginEvent
     public function getRawAttribute(string $key, $default = null)
     {
         $value = $this->rawAttributes[$key] ?? null;
-        
+
         if ($value === null) {
             return $default;
         }
 
         // SAML attributes are typically arrays
         return is_array($value) ? ($value[0] ?? $default) : $value;
+    }
+
+    /**
+     * Get a mapped attribute as an array of all its values.
+     *
+     * Use this for multi-valued attributes (e.g. roles/groups) where a user may
+     * have more than one value. Unlike getAttribute(), this never drops values:
+     * it always returns an array, wrapping a single scalar value in one.
+     *
+     * @return array<int, mixed>
+     */
+    public function getAttributeAll(string $key, array $default = []): array
+    {
+        if (! array_key_exists($key, $this->attributes)) {
+            return $default;
+        }
+
+        $value = $this->attributes[$key];
+
+        if ($value === null) {
+            return $default;
+        }
+
+        return is_array($value) ? array_values($value) : [$value];
+    }
+
+    /**
+     * Get a raw SAML attribute as an array of all its values.
+     *
+     * Unlike getRawAttribute(), which returns only the first value, this returns
+     * every value the IdP sent. Use it for multi-valued claims such as roles or
+     * groups so users with two or more never lose any.
+     *
+     * @return array<int, mixed>
+     */
+    public function getRawAttributeAll(string $key, array $default = []): array
+    {
+        $value = $this->rawAttributes[$key] ?? null;
+
+        if ($value === null) {
+            return $default;
+        }
+
+        return is_array($value) ? array_values($value) : [$value];
     }
 
     /**

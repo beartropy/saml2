@@ -58,6 +58,44 @@ test('getRawAttribute unwraps array values', function () {
     expect($event->getRawAttribute('email'))->toBe('user@example.com');
 });
 
+test('getAttributeAll returns every mapped role for a multi-role user', function () {
+    $event = new Saml2LoginEvent(
+        idpKey: 'test',
+        nameId: 'user@example.com',
+        attributes: ['roles' => ['admin', 'editor']],
+        rawAttributes: [],
+    );
+
+    expect($event->getAttributeAll('roles'))->toBe(['admin', 'editor']);
+});
+
+test('getAttributeAll wraps a single scalar value in an array', function () {
+    $event = new Saml2LoginEvent(
+        idpKey: 'test',
+        nameId: 'user@example.com',
+        attributes: ['roles' => 'admin'],
+        rawAttributes: [],
+    );
+
+    expect($event->getAttributeAll('roles'))->toBe(['admin']);
+    expect($event->getAttributeAll('missing', ['none']))->toBe(['none']);
+});
+
+test('getRawAttributeAll returns all raw values instead of only the first', function () {
+    $event = new Saml2LoginEvent(
+        idpKey: 'test',
+        nameId: 'user@example.com',
+        attributes: [],
+        rawAttributes: ['roles' => ['admin', 'editor', 'viewer']],
+    );
+
+    // getRawAttribute() still collapses to the first value (backward compatible)...
+    expect($event->getRawAttribute('roles'))->toBe('admin');
+    // ...while getRawAttributeAll() preserves every role.
+    expect($event->getRawAttributeAll('roles'))->toBe(['admin', 'editor', 'viewer']);
+    expect($event->getRawAttributeAll('missing', []))->toBe([]);
+});
+
 test('toArray includes all data', function () {
     $event = new Saml2LoginEvent(
         idpKey: 'azure',

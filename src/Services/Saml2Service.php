@@ -391,8 +391,15 @@ class Saml2Service
         foreach ($mapping as $localKey => $samlKey) {
             if (isset($attributes[$samlKey])) {
                 $value = $attributes[$samlKey];
-                // SAML attributes are often arrays, get first value
-                $mapped[$localKey] = is_array($value) ? ($value[0] ?? null) : $value;
+                // SAML attributes always arrive as arrays. Preserve every value
+                // when the IdP sends more than one (e.g. multiple roles/groups);
+                // collapse a single value to a scalar so common single-valued
+                // attributes (email, name, ...) stay strings for existing consumers.
+                if (is_array($value)) {
+                    $mapped[$localKey] = count($value) > 1 ? array_values($value) : ($value[0] ?? null);
+                } else {
+                    $mapped[$localKey] = $value;
+                }
             }
         }
 

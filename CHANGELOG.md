@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.8] - 2026-06-27
+
+### Added
+- **Saml2LoginEvent**: `getAttributeAll()` and `getRawAttributeAll()` — accessors that always return an array of *every* value for a multi-valued attribute (e.g. roles, groups). Use these for users who may have two or more roles; `getAttributeAll()` even wraps a single scalar in a one-element array so listeners can `syncRoles()` without branching.
+
+### Changed
+- **Attribute mapping**: Multi-valued SAML attributes are no longer collapsed to their first value. `mapAttributes()` now preserves all values when the IdP sends more than one (so `$event->getAttribute('roles')` returns every role), while still collapsing single-valued attributes to a scalar to keep `email`/`name` and other single-value consumers working. Previously a user with 2+ roles silently received only the first one.
+- **Listener stub**: The published `HandleSaml2Login` listener now demonstrates assigning *all* roles via `$event->getAttributeAll('roles')` + `syncRoles()`.
+
+### Note
+- If a listener reads `$event->getAttribute('roles')` and assumed a string, it now receives an array when the user has multiple roles. `getRawAttribute()` is unchanged (still returns the first value) for backward compatibility.
+
 ## [v0.3.7] - 2026-06-25
 
 ### Fixed
