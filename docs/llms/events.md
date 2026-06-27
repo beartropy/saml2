@@ -28,9 +28,23 @@ new Saml2LoginEvent(
 - `getRawAttributeAll($key, array $default = [])` → raw attribute as an array of ALL values
 
 ### Multi-valued attributes (roles/groups)
-- `mapAttributes()` preserves all values when the IdP sends more than one; it collapses single-valued attributes to a scalar so `email`/`name` stay strings
-- For role/group assignment, prefer `getAttributeAll('roles')` (always an array) → `$user->syncRoles($roles)`
-- Do NOT use `getRawAttribute('roles')` for multi-role users — it returns only the first role. Use `getRawAttributeAll()`
+SAML attributes always arrive as arrays. `mapAttributes()` (in `Saml2Service`) collapses a SINGLE-valued attribute to a scalar so `email`/`name` stay strings, and keeps an attribute with 2+ values as an array. `getAttribute()` returns whatever was stored — so its type depends on the count.
+
+Return type per accessor for `roles`:
+
+| Accessor | Source | 0 values | 1 value | 2+ values |
+|----------|--------|----------|---------|-----------|
+| `getAttribute('roles')` | mapped | `$default` | `'admin'` (scalar) | `['admin','editor']` |
+| `getAttributeAll('roles')` | mapped | `[]` | `['admin']` | `['admin','editor']` |
+| `getRawAttribute('roles')` | raw | `$default` | `'admin'` | `'admin'` (first only) |
+| `getRawAttributeAll('roles')` | raw | `[]` | `['admin']` | `['admin','editor']` |
+
+Rules:
+- `getAttributeAll()` / `getRawAttributeAll()` ALWAYS return an array (`[]`/`[v]`/`[v,...]`). Use them when you iterate/count/sync, so the single-value case is not a bare string.
+- `getAttribute()` is scalar for one value, array for many — safe for `syncRoles()` (spatie accepts string or array), unsafe to `foreach`.
+- `getRawAttribute()` returns ONLY the first value — never use it for multi-valued claims.
+- Mapped accessors read `$attributes` keyed by the LOCAL mapping key (may map to a differently-named SAML claim). Raw accessors read `$rawAttributes` keyed by the actual claim name. The untouched raw array is `getRawAttributeAll()` / `getRawAttributes()[$key]`.
+- For role/group assignment, prefer: `$user->syncRoles($event->getAttributeAll('roles'))`.
 
 ## Saml2LogoutEvent
 

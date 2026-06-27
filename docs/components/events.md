@@ -45,9 +45,36 @@ class HandleSaml2Login
 | `getName()` | `?string` | Intelligent name extraction |
 | `toArray()` | `array` | All event data as array |
 
-### Multiple roles / groups
+### Multi-valued attributes (roles / groups)
 
-SAML attributes can carry more than one value — a user often belongs to several roles or groups. Use `getAttributeAll()` (or `getRawAttributeAll()`) so you never lose any. They always return an array, even for a single value, so you can assign roles without branching:
+SAML attributes always arrive as arrays, and a user often belongs to **several** roles or groups. How you read them decides whether you get all of the values or just one, so pick the right accessor.
+
+#### Mapped vs. raw
+
+- **Mapped** accessors (`getAttribute*`) read `$attributes` — the values after your `attribute_mapping` is applied, keyed by your **local** key (e.g. `roles`). The local key may point at a differently-named SAML claim (e.g. `roles` → `http://schemas.microsoft.com/ws/2008/06/identity/claims/groups`).
+- **Raw** accessors (`getRawAttribute*`) read `$rawAttributes` — the **untouched** SAML claim values, keyed by the claim name exactly as the IdP sent it.
+
+#### Single-value collapse
+
+When mapping is built, a **single-valued** attribute is collapsed to a scalar (so `email`, `name`, etc. stay plain strings); an attribute with **two or more** values is kept as an array. `getAttribute()` simply returns whatever was stored, so its type depends on how many values came in:
+
+| Accessor | Source | 0 values (missing/empty) | 1 value | 2+ values |
+|----------|--------|--------------------------|---------|-----------|
+| `getAttribute('roles')` | mapped | `$default` | `'admin'` *(scalar)* | `['admin', 'editor']` |
+| `getAttributeAll('roles')` | mapped | `[]` *(or `$default`)* | `['admin']` | `['admin', 'editor']` |
+| `getRawAttribute('roles')` | raw | `$default` | `'admin'` | `'admin'` *(first only!)* |
+| `getRawAttributeAll('roles')` | raw | `[]` *(or `$default`)* | `['admin']` | `['admin', 'editor']` |
+
+Key points:
+
+- **`getAttributeAll()` / `getRawAttributeAll()` always return an array** — `[]`, `['one']`, or `['many', '...']` — never a scalar. Use them whenever you will iterate, count, or sync, so the **single-role** case (`'admin'`) doesn't surprise you as a bare string.
+- **`getAttribute()`** returns a scalar for one value and an array for many. It's fine for `syncRoles()` (spatie accepts a string *or* an array) but it's a footgun if you `foreach`/`map` over it.
+- **`getRawAttribute()`** returns only the **first** value, even when several were sent. Never use it for multi-valued claims — reach for `getRawAttributeAll()` (or `getRawAttributes()[$key]`) instead.
+- `getAttributeAll()` reconstructs the full value list losslessly (order preserved), so for a mapped key it matches what the IdP sent. The truly *untouched* raw array is `getRawAttributeAll()` / `getRawAttributes()[$key]`.
+
+#### Recommended pattern
+
+`getAttributeAll()` always returns an array, so you can assign roles without branching on the count:
 
 ```php
 public function handle(Saml2LoginEvent $event): void
@@ -57,7 +84,7 @@ public function handle(Saml2LoginEvent $event): void
         ['name' => $event->getName() ?? $event->getEmail()]
     );
 
-    // Every role the IdP sent — not just the first one.
+    // Every role the IdP sent — works for 0, 1, or many.
     $roles = $event->getAttributeAll('roles');
 
     if (! empty($roles)) {
@@ -65,8 +92,6 @@ public function handle(Saml2LoginEvent $event): void
     }
 }
 ```
-
-> `getAttribute('roles')` returns an array when the user has 2+ roles and a scalar when they have one. Prefer `getAttributeAll('roles')` when you want a consistent array. `getRawAttribute()` still returns only the first value, for backward compatibility — use `getRawAttributeAll()` for the full list.
 
 ## Saml2LogoutEvent
 
