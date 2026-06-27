@@ -271,7 +271,8 @@ public function handle(Saml2LoginEvent $event): void
 {
     $email = $event->getEmail();
     $name = $event->getName();
-    $groups = $event->getAttribute('groups') ?? [];
+    // getAttributeAll() always returns an array, so users in 2+ groups keep all of them.
+    $groups = $event->getAttributeAll('groups');
 
     $user = User::firstOrCreate(
         ['email' => $email],

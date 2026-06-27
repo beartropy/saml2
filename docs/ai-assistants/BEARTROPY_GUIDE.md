@@ -51,8 +51,10 @@ class HandleSaml2Login
 ### Event Helpers
 - `$event->getEmail()` — Intelligent email extraction
 - `$event->getName()` — Intelligent name extraction
-- `$event->getAttribute('key')` — Get mapped attribute
-- `$event->getRawAttribute('key')` — Get raw SAML attribute
+- `$event->getAttribute('key')` — Get mapped attribute (array when multi-valued, scalar when single)
+- `$event->getAttributeAll('key')` — Get mapped attribute as an array of ALL values (use for roles/groups)
+- `$event->getRawAttribute('key')` — Get raw SAML attribute (first value only)
+- `$event->getRawAttributeAll('key')` — Get raw SAML attribute as an array of ALL values
 
 ## Configuration Essentials
 

@@ -30,8 +30,10 @@ class HandleSaml2Login
             ]
         );
 
-        // Sync roles from SAML attributes
-        $roles = $event->getAttribute('roles', []);
+        // Sync roles from SAML attributes.
+        // getAttributeAll() always returns an array, so users with 2+ roles
+        // keep all of them (getAttribute() would return a scalar for one role).
+        $roles = $event->getAttributeAll('roles');
         if (!empty($roles)) {
             $user->syncRoles($roles);
         }
